@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>לוח שנה עברי-לועזי</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=David+Libre:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <div class="header-controls">
+                <button id="toggleCalendar" class="control-btn">החלף תצוגה</button>
+                <button id="todayBtn" class="control-btn">היום</button>
+                <button id="settingsBtn" class="control-btn">הגדרות</button>
+            </div>
+            <div class="month-controls">
+                <button id="prevMonth" class="nav-btn">◀</button>
+                <h2 id="currentMonth"></h2>
+                <button id="nextMonth" class="nav-btn">▶</button>
+            </div>
+        </header>
+
+        <div class="calendar-grid">
+            <div class="weekdays">
+                <div>ראשון</div>
+                <div>שני</div>
+                <div>שלישי</div>
+                <div>רביעי</div>
+                <div>חמישי</div>
+                <div>שישי</div>
+                <div>שבת</div>
+            </div>
+            <div id="daysGrid" class="days"></div>
+        </div>
+
+        <!-- Modal for day details -->
+        <div id="dayModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h3 id="modalDate"></h3>
+                <div id="modalEvents"></div>
+                <div id="modalZmanim"></div>
+            </div>
+        </div>
+
+        <!-- Settings Modal -->
+        <div id="settingsModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h3>הגדרות</h3>
+                <form id="settingsForm" class="settings-form">
+                    <div class="setting-item">
+                        <label for="fontSize">גודל טקסט:</label>
+                        <select id="fontSize" name="fontSize">
+                            <option value="small">קטן</option>
+                            <option value="medium" selected>בינוני</option>
+                            <option value="large">גדול</option>
+                        </select>
+                    </div>
+                    <div class="setting-item">
+                        <label for="showEvents">הצג אירועים:</label>
+                        <input type="checkbox" id="showEvents" name="showEvents" checked>
+                    </div>
+                    <div class="setting-item">
+                        <label for="themeColor">צבע נושא:</label>
+                        <select id="themeColor" name="themeColor">
+                            <option value="blue">כחול</option>
+                            <option value="green">ירוק</option>
+                            <option value="orange">כתום</option>
+                        </select>
+                    </div>
+                    <div class="setting-item">
+                        <button type="submit" class="save-btn">שמור הגדרות</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast notification -->
+    <div id="toast" class="toast"></div>
+
+    <script type="module" src="/app.js"></script>
+    <script type="module">
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registered:', registration);
+                    })
+                    .catch(error => {
+                        console.log('ServiceWorker registration failed:', error);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>
