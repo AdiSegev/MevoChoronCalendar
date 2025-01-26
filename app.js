@@ -161,53 +161,111 @@ function renderCalendar() {
         // ניקוי הלוח הקיים
         daysGrid.innerHTML = '';
         
-        // המרה לתאריך עברי
-        const selectedHebDate = new HDate(selectedDate);
-        const hebMonth = selectedHebDate.getMonth();
-        const hebYear = selectedHebDate.getFullYear();
-        
-        // מציאת היום הראשון והאחרון של החודש העברי
-        const firstDayOfHebMonth = new HDate(1, hebMonth, hebYear);
-        const daysInHebMonth = HDate.daysInMonth(hebMonth, hebYear);
-        const lastDayOfHebMonth = new HDate(daysInHebMonth, hebMonth, hebYear);
-        
-        // המרה לתאריכים לועזיים
-        const firstGregorianDate = firstDayOfHebMonth.greg();
-        const lastGregorianDate = lastDayOfHebMonth.greg();
-        
-        // חישוב היום בשבוע של תחילת החודש העברי (0 = ראשון)
-        const startingDay = firstGregorianDate.getDay();
-        
-        // הצגת שם החודש
-        const monthName = getHebrewMonthName(hebMonth, hebYear);
-        currentMonthElement.textContent = isHebrewDisplay ? 
-            `${monthName} ${hebYear}` : 
-            `${selectedDate.toLocaleString('he', { month: 'long' })} ${selectedDate.getFullYear()}`;
-        
-        // ימים מהחודש הקודם להשלמת השבוע
-        const prevMonthDays = startingDay;
-        for (let i = prevMonthDays - 1; i >= 0; i--) {
-            const prevDate = new Date(firstGregorianDate);
-            prevDate.setDate(firstGregorianDate.getDate() - i - 1);
-            createDayElement(prevDate, daysGrid, true);
-        }
-        
-        // ימי החודש העברי הנוכחי
-        let currentHebDate = new HDate(firstDayOfHebMonth);
-        for (let i = 1; i <= daysInHebMonth; i++) {
-            const currentDate = currentHebDate.greg();
-            createDayElement(currentDate, daysGrid, false);
-            currentHebDate = new HDate(i + 1, hebMonth, hebYear);
-        }
-        
-        // ימים מהחודש הבא להשלמת השבוע האחרון
-        const lastDayOfWeek = lastGregorianDate.getDay();
-        const nextMonthDays = (lastDayOfWeek === 6) ? 0 : 6 - lastDayOfWeek;
-        
-        let nextDate = new Date(lastGregorianDate);
-        for (let i = 1; i <= nextMonthDays; i++) {
-            nextDate.setDate(nextDate.getDate() + 1);
-            createDayElement(nextDate, daysGrid, true);
+        if (isHebrewDisplay) {
+            // מצב עברי-לועזי
+            
+            // המרה לתאריך עברי
+            const selectedHebDate = new HDate(selectedDate);
+            const hebMonth = selectedHebDate.getMonth();
+            const hebYear = selectedHebDate.getFullYear();
+            
+            // מציאת היום הראשון והאחרון של החודש העברי
+            const firstDayOfHebMonth = new HDate(1, hebMonth, hebYear);
+            const daysInHebMonth = HDate.daysInMonth(hebMonth, hebYear);
+            const lastDayOfHebMonth = new HDate(daysInHebMonth, hebMonth, hebYear);
+            
+            // המרה לתאריכים לועזיים
+            const firstGregorianDate = firstDayOfHebMonth.greg();
+            const lastGregorianDate = lastDayOfHebMonth.greg();
+            
+            // חישוב היום בשבוע של תחילת החודש העברי (0 = ראשון)
+            const startingDay = firstGregorianDate.getDay();
+            
+            // הצגת שם החודש
+            const monthName = getHebrewMonthName(hebMonth, hebYear);
+            currentMonthElement.textContent = `${monthName} ${hebYear}`;
+            
+            // ימים מהחודש הקודם להשלמת השבוע
+            const prevMonthDays = startingDay;
+            for (let i = prevMonthDays - 1; i >= 0; i--) {
+                const prevDate = new Date(firstGregorianDate);
+                prevDate.setDate(firstGregorianDate.getDate() - i - 1);
+                createDayElement(prevDate, daysGrid, true);
+            }
+            
+            // ימי החודש העברי הנוכחי
+            let currentHebDate = new HDate(firstDayOfHebMonth);
+            for (let i = 1; i <= daysInHebMonth; i++) {
+                const currentDate = currentHebDate.greg();
+                createDayElement(currentDate, daysGrid, false);
+                currentHebDate = new HDate(i + 1, hebMonth, hebYear);
+            }
+            
+            // ימים מהחודש הבא להשלמת השבוע האחרון
+            const lastDayOfWeek = lastGregorianDate.getDay();
+            const nextMonthDays = (lastDayOfWeek === 6) ? 0 : 6 - lastDayOfWeek;
+            
+            let nextDate = new Date(lastGregorianDate);
+            for (let i = 1; i <= nextMonthDays; i++) {
+                nextDate.setDate(nextDate.getDate() + 1);
+                createDayElement(nextDate, daysGrid, true);
+            }
+        } else {
+            // מצב לועזי-עברי
+            
+            // עדכון כותרת הלוח
+            const currentMonth = document.getElementById('currentMonth');
+            if (isHebrewDisplay) {
+                const hebDate = new HDate(selectedDate);
+                const hebMonth = hebDate.getMonth();
+                const hebYear = hebDate.getFullYear();
+                currentMonth.textContent = `${getHebrewMonthName(hebMonth, hebYear)} ${numberToHebrewLetters(hebYear)}`;
+            } else {
+                const hebDate = new HDate(selectedDate);
+                const hebMonth = hebDate.getMonth();
+                const hebYear = hebDate.getFullYear();
+                const hebMonthName = getHebrewMonthName(hebMonth, hebYear);
+                
+                const gregorianMonthName = selectedDate.toLocaleString('he-IL', { month: 'long' });
+                const gregorianYear = selectedDate.getFullYear();
+                currentMonth.textContent = `${gregorianMonthName} ${gregorianYear} - ${hebMonthName} ${numberToHebrewLetters(hebYear)}`;
+            }
+            
+            // חישוב היום הראשון והאחרון של החודש הלועזי
+            const year = selectedDate.getFullYear();
+            const month = selectedDate.getMonth();
+            const firstDayOfMonth = new Date(year, month, 1);
+            const lastDayOfMonth = new Date(year, month + 1, 0);
+            
+            // חישוב היום בשבוע של תחילת החודש (0 = ראשון)
+            const startingDay = firstDayOfMonth.getDay();
+            
+            // הצגת שם החודש
+            currentMonthElement.textContent = `${firstDayOfMonth.toLocaleString('he', { month: 'long' })} ${year}`;
+            
+            // ימים מהחודש הקודם להשלמת השבוע
+            const prevMonthDays = startingDay;
+            for (let i = prevMonthDays - 1; i >= 0; i--) {
+                const prevDate = new Date(firstDayOfMonth);
+                prevDate.setDate(firstDayOfMonth.getDate() - i - 1);
+                createDayElement(prevDate, daysGrid, true);
+            }
+            
+            // ימי החודש הנוכחי
+            for (let i = 1; i <= lastDayOfMonth.getDate(); i++) {
+                const currentDate = new Date(year, month, i);
+                createDayElement(currentDate, daysGrid, false);
+            }
+            
+            // ימים מהחודש הבא להשלמת השבוע האחרון
+            const lastDayOfWeek = lastDayOfMonth.getDay();
+            const nextMonthDays = (lastDayOfWeek === 6) ? 0 : 6 - lastDayOfWeek;
+            
+            let nextDate = new Date(lastDayOfMonth);
+            for (let i = 1; i <= nextMonthDays; i++) {
+                nextDate.setDate(nextDate.getDate() + 1);
+                createDayElement(nextDate, daysGrid, true);
+            }
         }
         
     } catch (error) {
@@ -224,8 +282,12 @@ function createDayElement(date, container, isOutsideMonth) {
         
         const hebDate = new HDate(date);
         let events = [];
+        const currentSettings = loadSettings();
+        
         try {
-            events = settings.showEvents ? HebrewCalendar.getHolidaysOnDate(hebDate, defaultLocation) : [];
+            if (currentSettings.showEvents) {
+                events = HebrewCalendar.getHolidaysOnDate(hebDate);
+            }
         } catch (error) {
             console.error('שגיאה בטעינת אירועים:', error);
         }
@@ -237,12 +299,20 @@ function createDayElement(date, container, isOutsideMonth) {
         // תאריך ראשי
         const primaryDate = document.createElement('div');
         primaryDate.className = 'primary-date';
-        primaryDate.textContent = numberToHebrewLetters(hebDate.getDate());
         
         // תאריך משני
         const secondaryDate = document.createElement('div');
         secondaryDate.className = 'secondary-date';
-        secondaryDate.textContent = date.getDate().toString();
+        
+        if (isHebrewDisplay) {
+            primaryDate.textContent = numberToHebrewLetters(hebDate.getDate());
+            const gregorianMonth = date.toLocaleString('he-IL', { month: 'short' });
+            secondaryDate.textContent = `${date.getDate()} ${gregorianMonth}`;
+        } else {
+            primaryDate.textContent = date.getDate().toString();
+            const hebMonth = getHebrewMonthName(hebDate.getMonth(), hebDate.getFullYear());
+            secondaryDate.textContent = `${numberToHebrewLetters(hebDate.getDate())} ${hebMonth}`;
+        }
         
         dayElement.appendChild(primaryDate);
         dayElement.appendChild(secondaryDate);
@@ -397,61 +467,87 @@ function setupEventListeners() {
 
     if (prevMonthBtn) {
         prevMonthBtn.addEventListener('click', () => {
-            const currentHebDate = new HDate(selectedDate);
-            const hebMonth = currentHebDate.getMonth();
-            const hebYear = currentHebDate.getFullYear();
-            
-            let prevMonth, prevYear;
-            
-            if (hebMonth === 7) { // אם אנחנו בתשרי
-                prevMonth = 6; // נחזור לאלול
-                prevYear = hebYear - 1; // של השנה הקודמת
-            } else if (hebMonth === 1) { // אם אנחנו בניסן
-                // נחזור לאדר (או אדר ב' בשנה מעוברת)
-                prevYear = hebYear;
-                prevMonth = HDate.isLeapYear(prevYear) ? 13 : 12;
+            if (isHebrewDisplay) {
+                // מצב עברי-לועזי: ניווט לפי חודשים עבריים
+                const currentHebDate = new HDate(selectedDate);
+                const hebMonth = currentHebDate.getMonth();
+                const hebYear = currentHebDate.getFullYear();
+                
+                let prevMonth, prevYear;
+                
+                if (hebMonth === 7) { // אם אנחנו בתשרי
+                    prevMonth = 6; // נחזור לאלול
+                    prevYear = hebYear - 1; // של השנה הקודמת
+                } else if (hebMonth === 1) { // אם אנחנו בניסן
+                    // נחזור לאדר (או אדר ב' בשנה מעוברת)
+                    prevYear = hebYear;
+                    prevMonth = HDate.isLeapYear(prevYear) ? 13 : 12;
+                } else {
+                    prevYear = hebYear;
+                    prevMonth = hebMonth - 1;
+                }
+                
+                const prevMonthDate = new HDate(1, prevMonth, prevYear);
+                selectedDate = prevMonthDate.greg();
             } else {
-                prevYear = hebYear;
-                prevMonth = hebMonth - 1;
+                // מצב לועזי-עברי: ניווט לפי חודשים לועזיים
+                const year = selectedDate.getFullYear();
+                const month = selectedDate.getMonth();
+                
+                if (month === 0) {
+                    selectedDate = new Date(year - 1, 11, 1);
+                } else {
+                    selectedDate = new Date(year, month - 1, 1);
+                }
             }
-            
-            const prevMonthDate = new HDate(1, prevMonth, prevYear);
-            selectedDate = prevMonthDate.greg();
             renderCalendar();
         });
     }
     
     if (nextMonthBtn) {
         nextMonthBtn.addEventListener('click', () => {
-            const currentHebDate = new HDate(selectedDate);
-            const hebMonth = currentHebDate.getMonth();
-            const hebYear = currentHebDate.getFullYear();
-            
-            let nextMonth, nextYear;
-            
-            if (hebMonth === 6) { // אם אנחנו באלול
-                nextMonth = 7; // נעבור לתשרי
-                nextYear = hebYear + 1; // של השנה הבאה
-            } else if (HDate.isLeapYear(hebYear)) {
-                if (hebMonth === 13) { // אם אנחנו באדר ב'
-                    nextMonth = 1; // נעבור לניסן
-                    nextYear = hebYear;
+            if (isHebrewDisplay) {
+                // מצב עברי-לועזי: ניווט לפי חודשים עבריים
+                const currentHebDate = new HDate(selectedDate);
+                const hebMonth = currentHebDate.getMonth();
+                const hebYear = currentHebDate.getFullYear();
+                
+                let nextMonth, nextYear;
+                
+                if (hebMonth === 6) { // אם אנחנו באלול
+                    nextMonth = 7; // נעבור לתשרי
+                    nextYear = hebYear + 1; // של השנה הבאה
+                } else if (HDate.isLeapYear(hebYear)) {
+                    if (hebMonth === 13) { // אם אנחנו באדר ב'
+                        nextMonth = 1; // נעבור לניסן
+                        nextYear = hebYear;
+                    } else {
+                        nextMonth = hebMonth + 1;
+                        nextYear = hebYear;
+                    }
                 } else {
-                    nextMonth = hebMonth + 1;
-                    nextYear = hebYear;
+                    if (hebMonth === 12) { // אם אנחנו באדר
+                        nextMonth = 1; // נעבור לניסן
+                        nextYear = hebYear;
+                    } else {
+                        nextMonth = hebMonth + 1;
+                        nextYear = hebYear;
+                    }
                 }
+                
+                const nextMonthDate = new HDate(1, nextMonth, nextYear);
+                selectedDate = nextMonthDate.greg();
             } else {
-                if (hebMonth === 12) { // אם אנחנו באדר
-                    nextMonth = 1; // נעבור לניסן
-                    nextYear = hebYear;
+                // מצב לועזי-עברי: ניווט לפי חודשים לועזיים
+                const year = selectedDate.getFullYear();
+                const month = selectedDate.getMonth();
+                
+                if (month === 11) {
+                    selectedDate = new Date(year + 1, 0, 1);
                 } else {
-                    nextMonth = hebMonth + 1;
-                    nextYear = hebYear;
+                    selectedDate = new Date(year, month + 1, 1);
                 }
             }
-            
-            const nextMonthDate = new HDate(1, nextMonth, nextYear);
-            selectedDate = nextMonthDate.greg();
             renderCalendar();
         });
     }
@@ -466,7 +562,22 @@ function setupEventListeners() {
     if (toggleBtn) {
         toggleBtn.addEventListener('click', () => {
             isHebrewDisplay = !isHebrewDisplay;
+            
+            // אם אנחנו במצב לועזי-עברי, נעבור לתחילת החודש הלועזי הנוכחי
+            if (!isHebrewDisplay) {
+                const year = selectedDate.getFullYear();
+                const month = selectedDate.getMonth();
+                selectedDate = new Date(year, month, 1);
+            } else {
+                // אם אנחנו במצב עברי-לועזי, נעבור לתחילת החודש העברי הנוכחי
+                const hebDate = new HDate(selectedDate);
+                const month = hebDate.getMonth();
+                const year = hebDate.getFullYear();
+                selectedDate = new HDate(1, month, year).greg();
+            }
+            
             renderCalendar();
+            showToast(isHebrewDisplay ? 'מצב תצוגה: עברי-לועזי' : 'מצב תצוגה: לועזי-עברי');
         });
     }
     
@@ -475,57 +586,83 @@ function setupEventListeners() {
     // מקשי מקלדת
     document.addEventListener('keydown', (e) => {
         if (e.key === 'ArrowLeft') {
-            const currentHebDate = new HDate(selectedDate);
-            const hebMonth = currentHebDate.getMonth();
-            const hebYear = currentHebDate.getFullYear();
-            
-            let prevMonth, prevYear;
-            
-            if (hebMonth === 7) { // אם אנחנו בתשרי
-                prevMonth = 6; // נחזור לאלול
-                prevYear = hebYear - 1; // של השנה הקודמת
-            } else if (hebMonth === 1) { // אם אנחנו בניסן
-                // נחזור לאדר (או אדר ב' בשנה מעוברת)
-                prevYear = hebYear;
-                prevMonth = HDate.isLeapYear(prevYear) ? 13 : 12;
+            if (isHebrewDisplay) {
+                // מצב עברי-לועזי: ניווט לפי חודשים עבריים
+                const currentHebDate = new HDate(selectedDate);
+                const hebMonth = currentHebDate.getMonth();
+                const hebYear = currentHebDate.getFullYear();
+                
+                let prevMonth, prevYear;
+                
+                if (hebMonth === 7) { // אם אנחנו בתשרי
+                    prevMonth = 6; // נחזור לאלול
+                    prevYear = hebYear - 1; // של השנה הקודמת
+                } else if (hebMonth === 1) { // אם אנחנו בניסן
+                    // נחזור לאדר (או אדר ב' בשנה מעוברת)
+                    prevYear = hebYear;
+                    prevMonth = HDate.isLeapYear(prevYear) ? 13 : 12;
+                } else {
+                    prevYear = hebYear;
+                    prevMonth = hebMonth - 1;
+                }
+                
+                const prevMonthDate = new HDate(1, prevMonth, prevYear);
+                selectedDate = prevMonthDate.greg();
             } else {
-                prevYear = hebYear;
-                prevMonth = hebMonth - 1;
+                // מצב לועזי-עברי: ניווט לפי חודשים לועזיים
+                const year = selectedDate.getFullYear();
+                const month = selectedDate.getMonth();
+                
+                if (month === 0) {
+                    selectedDate = new Date(year - 1, 11, 1);
+                } else {
+                    selectedDate = new Date(year, month - 1, 1);
+                }
             }
-            
-            const prevMonthDate = new HDate(1, prevMonth, prevYear);
-            selectedDate = prevMonthDate.greg();
             renderCalendar();
         } else if (e.key === 'ArrowRight') {
-            const currentHebDate = new HDate(selectedDate);
-            const hebMonth = currentHebDate.getMonth();
-            const hebYear = currentHebDate.getFullYear();
-            
-            let nextMonth, nextYear;
-            
-            if (hebMonth === 6) { // אם אנחנו באלול
-                nextMonth = 7; // נעבור לתשרי
-                nextYear = hebYear + 1; // של השנה הבאה
-            } else if (HDate.isLeapYear(hebYear)) {
-                if (hebMonth === 13) { // אם אנחנו באדר ב'
-                    nextMonth = 1; // נעבור לניסן
-                    nextYear = hebYear;
+            if (isHebrewDisplay) {
+                // מצב עברי-לועזי: ניווט לפי חודשים עבריים
+                const currentHebDate = new HDate(selectedDate);
+                const hebMonth = currentHebDate.getMonth();
+                const hebYear = currentHebDate.getFullYear();
+                
+                let nextMonth, nextYear;
+                
+                if (hebMonth === 6) { // אם אנחנו באלול
+                    nextMonth = 7; // נעבור לתשרי
+                    nextYear = hebYear + 1; // של השנה הבאה
+                } else if (HDate.isLeapYear(hebYear)) {
+                    if (hebMonth === 13) { // אם אנחנו באדר ב'
+                        nextMonth = 1; // נעבור לניסן
+                        nextYear = hebYear;
+                    } else {
+                        nextMonth = hebMonth + 1;
+                        nextYear = hebYear;
+                    }
                 } else {
-                    nextMonth = hebMonth + 1;
-                    nextYear = hebYear;
+                    if (hebMonth === 12) { // אם אנחנו באדר
+                        nextMonth = 1; // נעבור לניסן
+                        nextYear = hebYear;
+                    } else {
+                        nextMonth = hebMonth + 1;
+                        nextYear = hebYear;
+                    }
                 }
+                
+                const nextMonthDate = new HDate(1, nextMonth, nextYear);
+                selectedDate = nextMonthDate.greg();
             } else {
-                if (hebMonth === 12) { // אם אנחנו באדר
-                    nextMonth = 1; // נעבור לניסן
-                    nextYear = hebYear;
+                // מצב לועזי-עברי: ניווט לפי חודשים לועזיים
+                const year = selectedDate.getFullYear();
+                const month = selectedDate.getMonth();
+                
+                if (month === 11) {
+                    selectedDate = new Date(year + 1, 0, 1);
                 } else {
-                    nextMonth = hebMonth + 1;
-                    nextYear = hebYear;
+                    selectedDate = new Date(year, month + 1, 1);
                 }
             }
-            
-            const nextMonthDate = new HDate(1, nextMonth, nextYear);
-            selectedDate = nextMonthDate.greg();
             renderCalendar();
         }
     });
