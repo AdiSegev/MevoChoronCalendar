@@ -16,15 +16,68 @@ const hebrewMonths = [
 
 // פונקציה להמרת מספר לאותיות בעברית
 function numberToHebrewLetters(num) {
-    const letters = {
-        1: 'א', 2: 'ב', 3: 'ג', 4: 'ד', 5: 'ה',
-        6: 'ו', 7: 'ז', 8: 'ח', 9: 'ט', 10: 'י',
-        11: 'יא', 12: 'יב', 13: 'יג', 14: 'יד', 15: 'טו',
-        16: 'טז', 17: 'יז', 18: 'יח', 19: 'יט', 20: 'כ',
-        21: 'כא', 22: 'כב', 23: 'כג', 24: 'כד', 25: 'כה',
-        26: 'כו', 27: 'כז', 28: 'כח', 29: 'כט', 30: 'ל'
-    };
-    return letters[num] || num.toString();
+    // בדיקת קלט תקין
+    if (num === undefined || num === null || isNaN(num) || num <= 0) {
+        return '';
+    }
+
+    // מערך האותיות העבריות עם הערכים המספריים שלהן
+    const units = ['', 'א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח', 'ט'];
+    const tens = ['', 'י', 'כ', 'ל', 'מ', 'נ', 'ס', 'ע', 'פ', 'צ'];
+    const hundreds = ['', 'ק', 'ר', 'ש', 'ת', 'תק', 'תר', 'תש', 'תת', 'תתק'];
+    const thousands = ['', 'ה'];  // שינוי מ-'א' ל-'ה' עבור השנים העבריות הנוכחיות
+    // אם המספר קטן מ-31, נשתמש בטבלה הישנה לתאריכים
+    if (num <= 30) {
+        const letters = {
+            1: 'א', 2: 'ב', 3: 'ג', 4: 'ד', 5: 'ה',
+            6: 'ו', 7: 'ז', 8: 'ח', 9: 'ט', 10: 'י',
+            11: 'יא', 12: 'יב', 13: 'יג', 14: 'יד', 15: 'טו',
+            16: 'טז', 17: 'יז', 18: 'יח', 19: 'יט', 20: 'כ',
+            21: 'כא', 22: 'כב', 23: 'כג', 24: 'כד', 25: 'כה',
+            26: 'כו', 27: 'כז', 28: 'כח', 29: 'כט', 30: 'ל'
+        };
+        return letters[num] || num.toString();
+    }
+
+    // המרת שנה לאותיות עבריות
+    let result = 'ה';  // תמיד מתחילים עם האות ה' (5000)
+    
+    // המרת שארית המספר (ללא האלפים)
+    let remainder = num % 1000;
+    
+    // טיפול במאות
+    const hundreds_digit = Math.floor(remainder / 100);
+    if (hundreds_digit > 0) {
+        result += hundreds[hundreds_digit];
+    }
+    remainder = remainder % 100;
+
+    // טיפול בעשרות ויחידות
+    if (remainder > 0) {
+        // טיפול במספרים 15 ו-16 (טו, טז)
+        if (remainder === 15) {
+            result += 'טו';
+        } else if (remainder === 16) {
+            result += 'טז';
+        } else {
+            const tens_digit = Math.floor(remainder / 10);
+            const units_digit = remainder % 10;
+            
+            if (tens_digit > 0) {
+                result += tens[tens_digit];
+            }
+            if (units_digit > 0) {
+                result += units[units_digit];
+            }
+        }
+    }
+
+    // הוספת גרשיים
+    if (result.length > 1) {
+        result = result.slice(0, -1) + '"' + result.slice(-1);
+    }
+
+    return result;
 }
 
 // פונקציה לבדיקה האם השנה מעוברת
@@ -169,6 +222,8 @@ function renderCalendar() {
             const hebMonth = selectedHebDate.getMonth();
             const hebYear = selectedHebDate.getFullYear();
             
+            console.log('Hebrew Year:', hebYear); // הוספת לוג לבדיקה
+            
             // מציאת היום הראשון והאחרון של החודש העברי
             const firstDayOfHebMonth = new HDate(1, hebMonth, hebYear);
             const daysInHebMonth = HDate.daysInMonth(hebMonth, hebYear);
@@ -181,9 +236,10 @@ function renderCalendar() {
             // חישוב היום בשבוע של תחילת החודש העברי (0 = ראשון)
             const startingDay = firstGregorianDate.getDay();
             
-            // הצגת שם החודש
+            // קבלת שם החודש העברי
             const monthName = getHebrewMonthName(hebMonth, hebYear);
-            currentMonthElement.textContent = `${monthName} ${hebYear}`;
+            const hebrewYear = numberToHebrewLetters(hebYear);
+            currentMonthElement.textContent = hebrewYear ? `${monthName} ${hebrewYear}` : monthName;
             
             // ימים מהחודש הקודם להשלמת השבוע
             const prevMonthDays = startingDay;
@@ -219,16 +275,23 @@ function renderCalendar() {
                 const hebDate = new HDate(selectedDate);
                 const hebMonth = hebDate.getMonth();
                 const hebYear = hebDate.getFullYear();
-                currentMonth.textContent = `${getHebrewMonthName(hebMonth, hebYear)} ${numberToHebrewLetters(hebYear)}`;
+                console.log('Hebrew Year (2):', hebYear); // הוספת לוג לבדיקה
+                const monthName = getHebrewMonthName(hebMonth, hebYear);
+                const hebrewYear = numberToHebrewLetters(hebYear);
+                currentMonth.textContent = hebrewYear ? `${monthName} ${hebrewYear}` : monthName;
             } else {
                 const hebDate = new HDate(selectedDate);
                 const hebMonth = hebDate.getMonth();
                 const hebYear = hebDate.getFullYear();
                 const hebMonthName = getHebrewMonthName(hebMonth, hebYear);
+                const hebrewYear = numberToHebrewLetters(hebYear);
                 
                 const gregorianMonthName = selectedDate.toLocaleString('he-IL', { month: 'long' });
                 const gregorianYear = selectedDate.getFullYear();
-                currentMonth.textContent = `${gregorianMonthName} ${gregorianYear} - ${hebMonthName} ${numberToHebrewLetters(hebYear)}`;
+                
+                currentMonth.textContent = hebrewYear ? 
+                    `${gregorianMonthName} ${gregorianYear} - ${hebMonthName} ${hebrewYear}` :
+                    `${gregorianMonthName} ${gregorianYear} - ${hebMonthName}`;
             }
             
             // חישוב היום הראשון והאחרון של החודש הלועזי
@@ -343,7 +406,7 @@ function showDayDetails(date, events) {
     
     // הצגת התאריך
     const hebDate = new HDate(date);
-    modalDate.textContent = `${numberToHebrewLetters(hebDate.getDate())} ${hebrewMonths[getAdjustedMonthIndex(hebDate.getMonth(), hebDate.getFullYear()) - 1]} ${hebDate.getFullYear()}`;
+    modalDate.textContent = `${numberToHebrewLetters(hebDate.getDate())} ${hebrewMonths[getAdjustedMonthIndex(hebDate.getMonth(), hebDate.getFullYear()) - 1]} ${numberToHebrewLetters(hebDate.getFullYear())}`;
     modalDate.textContent += `\n${date.toLocaleDateString('he-IL')}`;
     
     // הצגת אירועים
