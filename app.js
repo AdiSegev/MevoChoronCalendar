@@ -284,83 +284,134 @@ function setupYearInput() {
 }
 
 function setupMonthSelect() {
-    const monthDisplay = document.getElementById('currentMonth');
-    const monthSelect = document.getElementById('monthSelect');
+    const currentMonthElement = document.getElementById('currentMonth');
+    const monthNavigationContainer = document.querySelector('.month-navigation');
     
-    // בדיקה שכל האלמנטים קיימים
-    if (!monthDisplay || !monthSelect) {
-        console.error('Month display or select elements are missing');
-        return;
-    }
-
-    // רשימת החודשים העבריים
-    const hebrewMonths = [
+    // Create dropdown container
+    const monthDropdownContainer = document.createElement('div');
+    monthDropdownContainer.classList.add('month-dropdown-container', 'hidden');
+    
+    // Create dropdown
+    const monthDropdown = document.createElement('div');
+    monthDropdown.classList.add('month-dropdown');
+    
+    // Predefined order of Hebrew months
+    const hebrewMonthOrder = [
         'תשרי', 'חשוון', 'כסלו', 'טבת', 'שבט', 
-        'אדר', 'ניסן', 'אייר', 'סיוון', 'תמוז', 
-        'אב', 'אלול', 'אדר א\'', 'אדר ב\''
+        'אדר', 'אדר א\'', 'אדר ב\'', 
+        'ניסן', 'אייר', 'סיוון', 'תמוז', 'אב', 'אלול'
     ];
-
-    function updateMonthOptions() {
-        monthSelect.innerHTML = '';
+    
+    // Function to get month names based on display mode
+    function getMonthNames(year) {
+        const months = [];
+        const isHebrew = isHebrewDisplay;
         
-        if (isHebrewDisplay) {
-            // הוספת חודשים עבריים
-            hebrewMonths.forEach((month, index) => {
-                const option = document.createElement('option');
-                option.value = index + 1;  // החודשים בעברית מתחילים מ-1
-                option.textContent = month;
-                monthSelect.appendChild(option);
+        if (isHebrew) {
+            // Hebrew months with special handling for leap years
+            const isLeap = isLeapYear(year);
+            
+            hebrewMonthOrder.forEach(monthName => {
+                // Skip extra Adar in non-leap years
+                if (!isLeap) {
+                    if (monthName === 'אדר א\'') return;
+                    if (monthName === 'אדר ב\'') return;
+                }
+                
+                months.push(monthName);
             });
         } else {
-            // הוספת חודשים לועזיים
-            const months = Array.from({length: 12}, (_, i) => 
-                new Date(2000, i).toLocaleString('he', {month: 'long'})
-            );
-            months.forEach((month, index) => {
-                const option = document.createElement('option');
-                option.value = index;
-                option.textContent = month;
-                monthSelect.appendChild(option);
-            });
+            // Gregorian months in order
+            for (let i = 1; i <= 12; i++) {
+                const monthDate = new Date(year, i - 1, 1);
+                months.push(monthDate.toLocaleString('he', { month: 'long' }));
+            }
         }
-    }
-
-    monthDisplay.addEventListener('click', () => {
-        updateMonthOptions();
         
-        // קביעת הערך הנוכחי
+        return months;
+    }
+    
+    // Function to create dropdown
+    function createMonthDropdown() {
+        // Clear previous dropdown
+        monthDropdown.innerHTML = '';
+        
+        const year = isHebrewDisplay 
+            ? new HDate(selectedDate).getFullYear() 
+            : selectedDate.getFullYear();
+        
+        const monthNames = getMonthNames(year);
+        
+        // Determine the current month name
+        let currentMonthName;
         if (isHebrewDisplay) {
             const hebDate = new HDate(selectedDate);
-            monthSelect.value = hebDate.getMonth();
+            const monthIndex = hebDate.getMonth();
+            currentMonthName = getHebrewMonthName(monthIndex, year);
+            
+            // Special handling for leap years
+            const isLeap = isLeapYear(year);
+            if (isLeap) {
+                if (currentMonthName === 'אדר') {
+                    currentMonthName = 'אדר א\'';
+                }
+            }
         } else {
-            monthSelect.value = selectedDate.getMonth();
+            currentMonthName = selectedDate.toLocaleString('he', { month: 'long' });
         }
         
-        monthSelect.classList.remove('hidden');
-        monthSelect.focus();
-    });
-
-    monthSelect.addEventListener('change', () => {
-        if (isHebrewDisplay) {
-            const currentHebDate = new HDate(selectedDate);
-            const newDate = new HDate(
-                1,  // יום ראשון בחודש
-                parseInt(monthSelect.value),
-                currentHebDate.getFullYear()
-            );
-            selectedDate = newDate.greg();
-        } else {
-            const year = selectedDate.getFullYear();
-            selectedDate = new Date(year, parseInt(monthSelect.value), 1);
-        }
+        monthNames.forEach((monthName, index) => {
+            const monthItem = document.createElement('div');
+            monthItem.classList.add('month-dropdown-item');
+            monthItem.textContent = monthName;
+            
+            // Highlight the current month
+            if (monthName === currentMonthName) {
+                monthItem.classList.add('current-month');
+            }
+            
+            // Map month name to correct index for Hebrew and Gregorian calendars
+            monthItem.addEventListener('click', () => {
+                // Update selected date to the first day of the selected month
+                if (isHebrewDisplay) {
+                    // Find the correct month index for Hebrew calendar
+                    const monthIndex = hebrewMonthOrder.findIndex(m => m === monthName) + 1;
+                    const newDate = new HDate(year, monthIndex, 1).greg();
+                    selectedDate = newDate;
+                } else {
+                    // Gregorian is straightforward
+                    selectedDate = new Date(year, index, 1);
+                }
+                
+                renderCalendar();
+                toggleMonthDropdown(); // Close dropdown after selection
+            });
+            
+            monthDropdown.appendChild(monthItem);
+        });
         
-        renderCalendar();
-        monthSelect.classList.add('hidden');
+        monthDropdownContainer.appendChild(monthDropdown);
+        monthNavigationContainer.appendChild(monthDropdownContainer);
+    }
+    
+    // Function to toggle month dropdown
+    function toggleMonthDropdown() {
+        monthDropdownContainer.classList.toggle('hidden');
+        currentMonthElement.classList.toggle('active');
+    }
+    
+    // Add click event to current month element
+    currentMonthElement.addEventListener('click', () => {
+        createMonthDropdown();
+        toggleMonthDropdown();
     });
-
-    monthSelect.addEventListener('blur', () => {
-        // סגירת הבחירה לאחר זמן קצר כדי לאפשר בחירה
-        setTimeout(() => monthSelect.classList.add('hidden'), 200);
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (event) => {
+        if (!monthNavigationContainer.contains(event.target) && 
+            !monthDropdownContainer.classList.contains('hidden')) {
+            toggleMonthDropdown();
+        }
     });
 }
 
@@ -380,30 +431,54 @@ function getAdjustedMonthIndex(month, year) {
 
 // פונקציה לקבלת אינדקס החודש הבא
 function getNextMonth(month, year) {
-    if (isLeapYear(year)) {
-        if (month === 11) return 12; // מעבר משבט לאדר א׳
-        if (month === 12) return 13; // מעבר מאדר א׳ לאדר ב׳
-        if (month === 13) return 1; // מעבר מאדר ב׳ לניסן
-        if (month === 14) return 1; // מעבר מאלול לתשרי
+    // בדיקה האם השנה מעוברת
+    const isLeap = isLeapYear(year);
+    
+    if (month === 14) { // אלול
+        return 1; // תשרי של השנה הבאה
+    }
+    
+    if (isLeap) {
+        // בשנה מעוברת
+        if (month === 12) { // אדר א'
+            return 13; // אדר ב'
+        }
+        if (month === 13) { // אדר ב'
+            return 1; // ניסן
+        }
         return month + 1;
     } else {
-        if (month === 11) return 1; // מעבר משבט לניסן (בשנה רגילה)
-        if (month === 12) return 1; // מעבר מאדר לניסן (בשנה רגילה)
-        if (month === 13) return 1; // מעבר מאלול לתשרי
+        // בשנה רגילה
+        if (month === 12) { // אדר
+            return 1; // ניסן
+        }
         return month + 1;
     }
 }
 
 // פונקציה לקבלת אינדקס החודש הקודם
 function getPrevMonth(month, year) {
-    if (isLeapYear(year)) {
-        if (month === 1) return 14; // מעבר מתשרי לאלול
-        if (month === 12) return 11; // מעבר מאדר א׳ לשבט
-        if (month === 13) return 12; // מעבר מאדר ב׳ לאדר א׳
+    // בדיקה האם השנה מעוברת
+    const isLeap = isLeapYear(year);
+    
+    if (month === 1) { // תשרי
+        return 14; // אלול של השנה הקודמת
+    }
+    
+    if (isLeap) {
+        // בשנה מעוברת
+        if (month === 13) { // אדר ב'
+            return 12; // אדר א'
+        }
+        if (month === 1) { // ניסן
+            return 13; // אדר ב'
+        }
         return month - 1;
     } else {
-        if (month === 1) return 12; // מעבר מתשרי לאלול
-        if (month === 12) return 11; // מעבר מאדר לשבט (בשנה רגילה)
+        // בשנה רגילה
+        if (month === 1) { // ניסן
+            return 12; // אדר
+        }
         return month - 1;
     }
 }
@@ -842,13 +917,18 @@ function setupEventListeners() {
                 
                 let nextMonth, nextYear;
                 
-                if (hebMonth === 6) { // אם אנחנו באלול
-                    nextMonth = 7; // נעבור לתשרי
+                if (hebMonth === 14) { // אם אנחנו באלול
+                    nextMonth = 1; // נעבור לתשרי
                     nextYear = hebYear + 1; // של השנה הבאה
-                } else if (hebMonth === 12 || (HDate.isLeapYear(hebYear) && hebMonth === 13)) {
-                    // אם אנחנו באדר או אדר ב' בשנה מעוברת
+                } else if (HDate.isLeapYear(hebYear) && hebMonth === 12) { // אדר א' בשנה מעוברת
+                    nextMonth = 13; // נעבור לאדר ב'
+                    nextYear = hebYear;
+                } else if (!HDate.isLeapYear(hebYear) && hebMonth === 12) { // אדר בשנה רגילה
                     nextMonth = 1; // נעבור לניסן
-                    nextYear = hebYear + 1;
+                    nextYear = hebYear;
+                } else if (HDate.isLeapYear(hebYear) && hebMonth === 13) { // אדר ב' בשנה מעוברת
+                    nextMonth = 1; // נעבור לניסן
+                    nextYear = hebYear;
                 } else {
                     nextYear = hebYear;
                     nextMonth = hebMonth + 1;
