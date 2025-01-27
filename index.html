@@ -12,14 +12,29 @@
     <div class="app-container">
         <header>
             <div class="header-controls">
-                <button id="toggleCalendar" class="control-btn">החלף תצוגה</button>
+                <button id="toggleCalendar" class="control-btn">לועזי עברי</button>
                 <button id="todayBtn" class="control-btn">היום</button>
                 <button id="settingsBtn" class="control-btn">הגדרות</button>
             </div>
             <div class="month-controls">
-                <button id="prevMonth" class="nav-btn">◀</button>
-                <h2 id="currentMonth"></h2>
-                <button id="nextMonth" class="nav-btn">▶</button>
+                <div class="year-display">
+                    <button id="prevYear" class="nav-btn">▶</button>
+                    <h2 id="currentYear" class="clickable"></h2>
+                    <button id="nextYear" class="nav-btn">◀</button>
+                    <div class="year-input-container hidden">
+                        <input type="text" id="yearInput" class="year-input">
+                        <div class="input-buttons">
+                            <button class="apply-btn">✓</button>
+                            <button class="cancel-btn">✗</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="month-navigation">
+                    <button id="prevMonth" class="nav-btn">▶</button>
+                    <h2 id="currentMonth" class="clickable"></h2>
+                    <button id="nextMonth" class="nav-btn">◀</button>
+                    <select id="monthSelect" class="month-select hidden"></select>
+                </div>
             </div>
         </header>
 

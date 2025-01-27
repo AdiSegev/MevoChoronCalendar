@@ -6,6 +6,7 @@
     --border-color: #E9ECEF;
     --hover-color: #2980B9;
     --disabled-color: #808080;
+    --accent-color: #2980B9;
 }
 
 * {
@@ -40,12 +41,40 @@ header {
 
 .month-controls {
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
     align-items: center;
     margin-bottom: 1rem;
+    gap: 0.5rem;
 }
 
-.control-btn, .nav-btn {
+.year-display,
+.month-navigation {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    width: 100%;
+    max-width: 300px;
+    position: relative;
+}
+
+#currentYear,
+#currentMonth {
+    margin: 0;
+    min-width: 120px;
+    text-align: center;
+}
+
+#currentYear {
+    color: var(--primary-color);
+    font-size: 1.2em;
+}
+
+#currentMonth {
+    font-size: 1.5em;
+}
+
+.control-btn {
     background-color: var(--primary-color);
     color: white;
     border: none;
@@ -55,8 +84,22 @@ header {
     transition: background-color 0.3s;
 }
 
-.control-btn:hover, .nav-btn:hover {
+.control-btn:hover {
     background-color: var(--hover-color);
+}
+
+.nav-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.3em;
+    font-size: 0.8em;
+    color: var(--primary-color);
+    transition: color 0.3s ease;
+}
+
+.nav-btn:hover {
+    color: var(--accent-color);
 }
 
 .calendar-grid {
@@ -132,6 +175,15 @@ header {
     height: 100%;
     background-color: rgba(0,0,0,0.5);
     z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s, visibility 0.3s;
+}
+
+.modal.visible {
+    display: block;
+    opacity: 1;
+    visibility: visible;
 }
 
 .modal-content {
@@ -194,6 +246,82 @@ header {
     animation: fadeIn 0.3s;
 }
 
+.clickable {
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.clickable:hover {
+    color: var(--accent-color);
+}
+
+.year-input-container {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    background: white;
+    padding: 5px;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    z-index: 100;
+    margin-top: 5px;
+}
+
+.year-input {
+    width: 80px;
+    padding: 4px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    text-align: center;
+    font-size: 1em;
+}
+
+.input-buttons {
+    display: flex;
+    gap: 2px;
+}
+
+.apply-btn, .cancel-btn {
+    border: none;
+    background: none;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    font-size: 1.2em;
+}
+
+.apply-btn {
+    color: green;
+}
+
+.cancel-btn {
+    color: red;
+}
+
+.month-select {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 4px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: white;
+    z-index: 100;
+    min-width: 120px;
+    text-align: center;
+    margin-top: 5px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.hidden {
+    display: none;
+}
+
 @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
@@ -213,7 +341,7 @@ header {
         min-height: 80px;
     }
     
-    .control-btn, .nav-btn {
+    .control-btn {
         padding: 0.4rem 0.8rem;
         font-size: 0.9rem;
     }
