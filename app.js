@@ -11,7 +11,7 @@ const defaultLocation = Location.lookup('Jerusalem');
 // מערך שמות החודשים העבריים
 const hebrewMonths = [
     'ניסן', 'אייר', 'סיון', 'תמוז', 'אב', 'אלול',
-    'תשרי', 'חשון', 'כסלו', 'טבת', 'שבט', 'אדר', 'אדר א׳', 'אדר ב׳'
+    'תשרי', 'חשון', 'כסלו', 'טבת', 'שבט', 'אדר א׳', 'אדר ב׳'
 ];
 
 // פונקציה להמרת מספר לאותיות בעברית
@@ -298,8 +298,13 @@ function setupMonthSelect() {
     // Predefined order of Hebrew months
     const hebrewMonthOrder = [
         'תשרי', 'חשוון', 'כסלו', 'טבת', 'שבט', 
-        'אדר', 'אדר א\'', 'אדר ב\'', 
-        'ניסן', 'אייר', 'סיוון', 'תמוז', 'אב', 'אלול'
+        'אדר', 'ניסן', 'אייר', 'סיוון', 'תמוז', 'אב', 'אלול'
+    ];
+    
+    // Predefined order of Hebrew months in leap years
+    const hebrewMonthOrderLeap = [
+        'תשרי', 'חשוון', 'כסלו', 'טבת', 'שבט', 
+        'אדר א\'', 'אדר ב\'', 'ניסן', 'אייר', 'סיוון', 'תמוז', 'אב', 'אלול'
     ];
     
     // Function to get month names based on display mode
@@ -311,13 +316,9 @@ function setupMonthSelect() {
             // Hebrew months with special handling for leap years
             const isLeap = isLeapYear(year);
             
-            hebrewMonthOrder.forEach(monthName => {
-                // Skip extra Adar in non-leap years
-                if (!isLeap) {
-                    if (monthName === 'אדר א\'') return;
-                    if (monthName === 'אדר ב\'') return;
-                }
-                
+            const monthsToUse = isLeap ? hebrewMonthOrderLeap : hebrewMonthOrder;
+            
+            monthsToUse.forEach(monthName => {
                 months.push(monthName);
             });
         } else {
@@ -348,14 +349,6 @@ function setupMonthSelect() {
             const hebDate = new HDate(selectedDate);
             const monthIndex = hebDate.getMonth();
             currentMonthName = getHebrewMonthName(monthIndex, year);
-            
-            // Special handling for leap years
-            const isLeap = isLeapYear(year);
-            if (isLeap) {
-                if (currentMonthName === 'אדר') {
-                    currentMonthName = 'אדר א\'';
-                }
-            }
         } else {
             currentMonthName = selectedDate.toLocaleString('he', { month: 'long' });
         }
@@ -827,13 +820,25 @@ function showDayDetails(date, events) {
     
     // הצגת התאריך
     const hebDate = new HDate(date);
+    let eventsList = '';
+    const currentSettings = loadSettings();
+    
+    // טעינת אירועים רק אם האפשרות מופעלת בהגדרות
+    if (currentSettings && currentSettings.showEvents) {
+        try {
+            events = HebrewCalendar.getHolidaysOnDate(hebDate);
+        } catch (error) {
+            console.error('שגיאה בטעינת אירועים:', error);
+        }
+    }
+    
     modalDate.textContent = `${numberToHebrewLetters(hebDate.getDate())} ${hebrewMonths[getAdjustedMonthIndex(hebDate.getMonth(), hebDate.getFullYear()) - 1]} ${numberToHebrewLetters(hebDate.getFullYear())}`;
     modalDate.textContent += `\n${date.toLocaleDateString('he-IL')}`;
     
     // הצגת אירועים
     modalEvents.innerHTML = '';
     if (events && events.length > 0) {
-        const eventsList = document.createElement('ul');
+        eventsList = document.createElement('ul');
         events.forEach(event => {
             const li = document.createElement('li');
             li.textContent = event.getDesc('he');
@@ -917,8 +922,8 @@ function setupEventListeners() {
                 
                 let nextMonth, nextYear;
                 
-                if (hebMonth === 14) { // אם אנחנו באלול
-                    nextMonth = 1; // נעבור לתשרי
+                if (hebMonth === 6) { // אם אנחנו באלול
+                    nextMonth = 7; // נעבור לתשרי
                     nextYear = hebYear + 1; // של השנה הבאה
                 } else if (HDate.isLeapYear(hebYear) && hebMonth === 12) { // אדר א' בשנה מעוברת
                     nextMonth = 13; // נעבור לאדר ב'
@@ -1127,4 +1132,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function convertNumberToHebrewYear(year) {
     return numberToHebrewLetters(year);
+}
+
+function getMonthNames(year) {
+    const months = [];
+    const isHebrew = isHebrewDisplay;
+    
+    if (isHebrew) {
+        // Hebrew months with special handling for leap years
+        const isLeap = isLeapYear(year);
+        
+        const monthsToUse = isLeap ? hebrewMonthOrderLeap : hebrewMonthOrder;
+        
+        monthsToUse.forEach(monthName => {
+            months.push(monthName);
+        });
+    } else {
+        // Gregorian months in order
+        for (let i = 1; i <= 12; i++) {
+            const monthDate = new Date(year, i - 1, 1);
+            months.push(monthDate.toLocaleString('he', { month: 'long' }));
+        }
+    }
+    
+    return months;
 }
