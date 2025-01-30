@@ -7,6 +7,7 @@
     --hover-color: #2980B9;
     --disabled-color: #808080;
     --accent-color: #2980B9;
+    --base-font-size: 16px;
 }
 
 * {
@@ -122,11 +123,11 @@ header {
 
 #currentYear {
     color: var(--primary-color);
-    font-size: 1.2em;
+    font-size: calc(var(--base-font-size) * 1.2);
 }
 
 #currentMonth {
-    font-size: 1.5em;
+    font-size: calc(var(--base-font-size) * 1.5);
 }
 
 #currentMonth.active {
@@ -176,6 +177,7 @@ header {
     color: white;
     padding: 1rem 0;
     text-align: center;
+    font-size: calc(var(--base-font-size) * 1.1);
 }
 
 .days {
@@ -191,106 +193,339 @@ header {
     padding: 0.5rem;
     position: relative;
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: all 0.2s ease-in-out;
+    font-size: var(--base-font-size);
+    border: 2px solid transparent;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 }
 
 .day:hover {
-    background-color: var(--background-color);
+    background-color: var(--hover-color);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .day.outside-month {
-    color: var(--disabled-color);
-    opacity: 0.3;
+    background-color: #CCC;
 }
 
-.day.today {
+.current-day {
     border: 2px solid var(--primary-color);
+    position: relative;
+}
+
+.current-day::after {
+    content: "";
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    bottom: -2px;
+    left: -2px;
+    border: 2px solid var(--primary-color);
+    border-radius: 8px;
+    pointer-events: none;
+}
+
+.selected-day {
+    background-color: var(--primary-color);
+    color: white;
+    transform: scale(1.02);
+}
+
+.selected-day:hover {
+    background-color: var(--hover-color);
+}
+
+.selected-day .secondary-date {
+    background-color: white;
+    color: var(--primary-color);
+    border-radius: 4px;
+    padding: 2px 4px;
+}
+
+.selected-day:hover .secondary-date {
+    color: var(--hover-color);
+}
+
+.selected-day .event-indicator {
+    color: white;
+    opacity: 0.9;
 }
 
 .primary-date {
-    font-size: 24px;
+    font-size: 1.5em;
     font-weight: bold;
-    text-align: center;
-    margin-top: 0.5rem;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
 }
 
 .secondary-date {
-    font-size: 12px;
+    font-size: calc(var(--base-font-size) * 0.85);
     position: absolute;
     top: 5px;
     right: 5px;
-    color: var(--primary-color);
-    font-weight: bold;
-    background-color: rgba(255, 255, 255, 0.9);
-    padding: 2px 4px;
-    border-radius: 3px;
 }
 
 .modal {
     display: none;
     position: fixed;
-    top: 0;
+    z-index: 1000;
     left: 0;
+    top: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0,0,0,0.5);
-    z-index: 1000;
+    background-color: rgba(0, 0, 0, 0.5);
     opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.3s, visibility 0.3s;
+    transition: opacity 0.3s ease-in-out;
 }
 
 .modal.visible {
-    display: block;
+    display: flex;
     opacity: 1;
-    visibility: visible;
+    justify-content: center;
+    align-items: center;
 }
 
 .modal-content {
     background-color: white;
-    margin: 15% auto;
-    padding: 2rem;
+    padding: 20px;
     border-radius: 8px;
-    width: 80%;
-    max-width: 500px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     position: relative;
-    animation: fadeIn 0.3s;
+    width: 90%;
+    max-width: 500px;
+    max-height: 80vh;
+    overflow-y: auto;
 }
 
 .close {
     position: absolute;
+    right: 10px;
     top: 10px;
-    left: 10px;
+    font-size: 24px;
     cursor: pointer;
-    font-size: 1.5rem;
+    color: #666;
+    transition: color 0.2s;
+}
+
+.close:hover {
+    color: #000;
+}
+
+#modalDate {
+    margin-top: 0;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.hebrew-date {
+    font-size: 1.2em;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.gregorian-date {
+    font-size: 0.9em;
+    color: #666;
+}
+
+#modalEvents {
+    margin: 15px 0;
+}
+
+#modalEvents ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+#modalEvents li {
+    padding: 5px 0;
+    border-bottom: 1px solid #eee;
+}
+
+#modalEvents li:last-child {
+    border-bottom: none;
+}
+
+#modalZmanim {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+}
+
+#modalZmanim p {
+    margin: 5px 0;
+    color: #333;
 }
 
 .settings-form {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 1.5rem;
 }
 
 .setting-item {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.setting-item label {
+    font-weight: bold;
+    color: var(--text-color);
+    font-size: calc(var(--base-font-size) * 0.9);
+}
+
+.setting-item select {
+    padding: 0.8rem;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    background-color: white;
+    font-size: var(--base-font-size);
+    transition: all 0.2s ease;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: left 0.8rem center;
+    padding-left: 2.5rem;
+}
+
+.setting-item select:hover {
+    border-color: var(--primary-color);
+}
+
+.setting-item select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+}
+
+.setting-item input[type="checkbox"] {
+    appearance: none;
+    width: 3.5rem;
+    height: 1.8rem;
+    background-color: var(--border-color);
+    border-radius: 1rem;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.setting-item input[type="checkbox"]::before {
+    content: "";
+    position: absolute;
+    width: 1.4rem;
+    height: 1.4rem;
+    border-radius: 50%;
+    background-color: white;
+    top: 0.2rem;
+    left: 0.2rem;
+    transition: transform 0.3s ease;
+}
+
+.setting-item input[type="checkbox"]:checked {
+    background-color: var(--primary-color);
+}
+
+.setting-item input[type="checkbox"]:checked::before {
+    transform: translateX(1.7rem);
+}
+
+.setting-item input[type="checkbox"]:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
 }
 
 .save-btn {
     background-color: var(--primary-color);
     color: white;
     border: none;
-    padding: 8px 16px;
-    border-radius: 4px;
+    padding: 1rem;
+    border-radius: 8px;
+    font-size: calc(var(--base-font-size) * 1.1);
+    font-weight: bold;
     cursor: pointer;
-    font-size: 1em;
-    margin-top: 16px;
+    transition: all 0.2s ease;
+    margin-top: 1rem;
     width: 100%;
 }
 
 .save-btn:hover {
-    opacity: 0.9;
+    background-color: var(--hover-color);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.save-btn:active {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+.setting-item select[name="themeColor"] {
+    padding-right: 2.5rem;
+}
+
+.setting-item select[name="themeColor"] option[value="blue"] {
+    background-color: #3498DB;
+    color: white;
+}
+
+.setting-item select[name="themeColor"] option[value="green"] {
+    background-color: #2ECC71;
+    color: white;
+}
+
+.setting-item select[name="themeColor"] option[value="orange"] {
+    background-color: #E67E22;
+    color: white;
+}
+
+.checkbox-wrapper {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.setting-description {
+    color: #666;
+    font-size: calc(var(--base-font-size) * 0.8);
+    margin-top: 0.25rem;
+}
+
+.save-icon {
+    margin-left: 0.5rem;
+    font-size: calc(var(--base-font-size) * 1.2);
+}
+
+.setting-item select[name="themeColor"] option {
+    padding: 0.5rem;
+}
+
+.setting-item:hover label {
+    color: var(--primary-color);
+}
+
+.setting-item select,
+.setting-item input[type="checkbox"],
+.save-btn,
+.close {
+    transition: all 0.2s ease-in-out;
+}
+
+.setting-item select:focus,
+.setting-item input[type="checkbox"]:focus,
+.save-btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
 }
 
 .toast {
@@ -382,6 +617,38 @@ header {
     display: none;
 }
 
+/* Theme Colors */
+.blue-theme {
+    --primary-color: #3498DB;
+    --hover-color: #2980B9;
+    --accent-color: #2980B9;
+}
+
+.green-theme {
+    --primary-color: #2ECC71;
+    --hover-color: #27AE60;
+    --accent-color: #27AE60;
+}
+
+.orange-theme {
+    --primary-color: #E67E22;
+    --hover-color: #D35400;
+    --accent-color: #D35400;
+}
+
+/* Font Sizes */
+.small-font {
+    --base-font-size: 14px;
+}
+
+.medium-font {
+    --base-font-size: 16px;
+}
+
+.large-font {
+    --base-font-size: 18px;
+}
+
 @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
@@ -404,5 +671,20 @@ header {
     .control-btn {
         padding: 0.4rem 0.8rem;
         font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .modal-content {
+        padding: 1.5rem;
+        width: 95%;
+    }
+
+    .setting-item {
+        gap: 0.3rem;
+    }
+
+    .save-btn {
+        padding: 0.8rem;
     }
 }
