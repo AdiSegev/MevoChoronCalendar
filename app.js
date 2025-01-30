@@ -4,15 +4,70 @@ import { HebrewCalendar, HDate, Location, Event } from '@hebcal/core';
 let selectedDate = new Date();  // שינוי השם מ-currentDate ל-selectedDate
 let isHebrewDisplay = true;
 let settings = loadSettings();
+let currentHebrewYear = 5785; // Initialize with current Hebrew year
 
-// הגדרת מיקום ברירת מחדל (ירושלים)
+// Function to update current Hebrew year
+function updateCurrentHebrewYear() {
+    const hebDate = new HDate(selectedDate);
+    currentHebrewYear = hebDate.getFullYear();
+}
+
+// Call this when the page loads
+function initializeCurrentHebrewYear() {
+    updateCurrentHebrewYear();
+}
+
+// הגדרת מיקום ברירת מחדד (ירושלים)
 const defaultLocation = Location.lookup('Jerusalem');
 
 // מערך שמות החודשים העבריים
-const hebrewMonths = [
-    'ניסן', 'אייר', 'סיון', 'תמוז', 'אב', 'אלול',
-    'תשרי', 'חשון', 'כסלו', 'טבת', 'שבט', 'אדר א׳', 'אדר ב׳'
+const hebrewMonthOrderLogic = [
+    'ניסן', 'אייר', 'סיוון', 'תמוז', 'אב', 'אלול',
+    'תשרי', 'חשוון', 'כסלו', 'טבת', 'שבט', 'אדר'
 ];
+
+const hebrewMonthOrderLogicLeap = [
+    'ניסן', 'אייר', 'סיוון', 'תמוז', 'אב', 'אלול',
+    'תשרי', 'חשוון', 'כסלו', 'טבת', 'שבט', 'אדר א\'', 'אדר ב\''
+];
+
+const hebrewMonthOrder = [
+    'תשרי', 'חשוון', 'כסלו', 'טבת', 'שבט', 'אדר',
+    'ניסן', 'אייר', 'סיוון', 'תמוז', 'אב', 'אלול'
+];
+
+const hebrewMonthOrderLeap = [
+    'תשרי', 'חשוון', 'כסלו', 'טבת', 'שבט', 'אדר א\'', 'אדר ב\'',
+    'ניסן', 'אייר', 'סיוון', 'תמוז', 'אב', 'אלול'
+];
+
+// Helper function to convert display order to logic order
+function getLogicMonthIndex(displayName, year) {
+    const logicOrder = isLeapYear(year) ? hebrewMonthOrderLogicLeap : hebrewMonthOrderLogic;
+    return logicOrder.indexOf(displayName);
+}
+
+// Function to get month names based on display mode
+function getMonthNames(year) {
+    const months = [];
+    const isHebrew = isHebrewDisplay;
+    
+    if (isHebrew) {
+        // Use the display order for the dropdown
+        const monthOrder = isLeapYear(year) ? hebrewMonthOrderLeap : hebrewMonthOrder;
+        monthOrder.forEach(monthName => {
+            months.push(monthName);
+        });
+    } else {
+        // Gregorian months in order
+        for (let i = 1; i <= 12; i++) {
+            const monthDate = new Date(year, i - 1, 1);
+            months.push(monthDate.toLocaleString('he', { month: 'long' }));
+        }
+    }
+    
+    return months;
+}
 
 // פונקציה להמרת מספר לאותיות בעברית
 function numberToHebrewLetters(number) {
@@ -207,8 +262,8 @@ function validateYearInput(input, isHebrewDisplay) {
 
 function calculateHebrewYearBoundaries() {
     // חישוב גבולות האלף החמישי בתאריך הלועזי
-    const startOfFifthMillennium = new HDate(5000, 1, 1).greg();
-    const endOfFifthMillennium = new HDate(6000, 1, 1).greg();
+    const startOfFifthMillennium = new HDate(1, 1, 5000).greg();
+    const endOfFifthMillennium = new HDate(1, 1, 6000).greg();
     
     return {
         minGregorianYear: startOfFifthMillennium.getFullYear(),
@@ -256,6 +311,7 @@ function setupYearInput() {
                     validatedYear
                 );
                 selectedDate = newDate.greg();
+                currentHebrewYear = validatedYear;  // Update currentHebrewYear
             } else {
                 selectedDate.setFullYear(validatedYear);
             }
@@ -271,6 +327,36 @@ function setupYearInput() {
 
     cancelBtn.addEventListener('click', () => {
         yearContainer.classList.add('hidden');
+    });
+
+    // Add keydown event listener for Enter key
+    yearInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault(); // Prevent form submission
+            const validatedYear = validateYearInput(yearInput.value, isHebrewDisplay);
+        
+            if (validatedYear !== null) {
+                if (isHebrewDisplay) {
+                    const currentHebDate = new HDate(selectedDate);
+                    const newDate = new HDate(
+                        currentHebDate.getDate(),
+                        currentHebDate.getMonth(),
+                        validatedYear
+                    );
+                    selectedDate = newDate.greg();
+                    currentHebrewYear = validatedYear;  // Update currentHebrewYear
+                } else {
+                    selectedDate.setFullYear(validatedYear);
+                }
+                renderCalendar();
+                yearContainer.classList.add('hidden');
+            } else {
+                const errorMessage = isHebrewDisplay 
+                    ? 'נא להזין שנה עברית תקינה בין 5000 ל-6000' 
+                    : 'נא להזין שנה לועזית תקינה';
+                showToast(errorMessage);
+            }
+        }
     });
 
     // סגירת תיבת הקלט בלחיצה מחוץ לה
@@ -367,14 +453,17 @@ function setupMonthSelect() {
             monthItem.addEventListener('click', () => {
                 // Update selected date to the first day of the selected month
                 if (isHebrewDisplay) {
-                    // Find the correct month index for Hebrew calendar
-                    const monthIndex = hebrewMonthOrder.findIndex(m => m === monthName) + 1;
-                    const newDate = new HDate(year, monthIndex, 1).greg();
-                    selectedDate = newDate;
+                    // Find the correct month index for Hebrew calendar using the logic order
+                    const monthIndex = getLogicMonthIndex(monthName, year) + 1;
+                    const newHebDate = new HDate(1, monthIndex, currentHebrewYear);
+                    selectedDate = newHebDate.greg();
                 } else {
                     // Gregorian is straightforward
                     selectedDate = new Date(year, index, 1);
                 }
+                
+                // Update current month display
+                currentMonthElement.textContent = monthName;
                 
                 renderCalendar();
                 toggleMonthDropdown(); // Close dropdown after selection
@@ -478,14 +567,9 @@ function getPrevMonth(month, year) {
 
 // פונקציה לקבלת שם החודש העברי
 function getHebrewMonthName(month, year) {
-    if (HDate.isLeapYear(year)) {
-        if (month === 12) return 'אדר א׳';
-        if (month === 13) return 'אדר ב׳';
-        return hebrewMonths[month - 1];
-    } else {
-        if (month === 12) return 'אדר';
-        return hebrewMonths[month - 1];
-    }
+    const isLeap = isLeapYear(year);
+    const monthArray = isLeap ? hebrewMonthOrderLogicLeap : hebrewMonthOrderLogic;
+    return monthArray[month - 1] || '';
 }
 
 // טעינת הגדרות מהאחסון המקומי
@@ -904,6 +988,7 @@ function setupEventListeners() {
                 
                 const prevMonthDate = new HDate(1, prevMonth, prevYear);
                 selectedDate = prevMonthDate.greg();
+                currentHebrewYear = prevYear;  // Update currentHebrewYear
             } else {
                 // מצב לועזי-עברי: ניווט לפי חודשים לועזיים
                 selectedDate.setMonth(selectedDate.getMonth() - 1);
@@ -941,6 +1026,7 @@ function setupEventListeners() {
                 
                 const nextMonthDate = new HDate(1, nextMonth, nextYear);
                 selectedDate = nextMonthDate.greg();
+                currentHebrewYear = nextYear;  // Update currentHebrewYear
             } else {
                 // מצב לועזי-עברי: ניווט לפי חודשים לועזיים
                 selectedDate.setMonth(selectedDate.getMonth() + 1);
@@ -956,13 +1042,10 @@ function setupEventListeners() {
                 const currentHebDate = new HDate(selectedDate);
                 const hebYear = currentHebDate.getFullYear();
                 const prevYear = hebYear - 1;
+                currentHebrewYear = prevYear;  // Update currentHebrewYear
                 
                 // יצירת תאריך בשנה הקודמת, באותו חודש ויום
-                const prevYearDate = new HDate(
-                    currentHebDate.getDate(), 
-                    currentHebDate.getMonth(), 
-                    prevYear
-                );
+                const prevYearDate = new HDate(1, currentHebDate.getMonth(), prevYear);
                 selectedDate = prevYearDate.greg();
             } else {
                 selectedDate.setFullYear(selectedDate.getFullYear() - 1);
@@ -977,13 +1060,10 @@ function setupEventListeners() {
                 const currentHebDate = new HDate(selectedDate);
                 const hebYear = currentHebDate.getFullYear();
                 const nextYear = hebYear + 1;
+                currentHebrewYear = nextYear;  // Update currentHebrewYear
                 
                 // יצירת תאריך בשנה הבאה, באותו חודש ויום
-                const nextYearDate = new HDate(
-                    currentHebDate.getDate(), 
-                    currentHebDate.getMonth(), 
-                    nextYear
-                );
+                const nextYearDate = new HDate(1, currentHebDate.getMonth(), nextYear);
                 selectedDate = nextYearDate.greg();
             } else {
                 selectedDate.setFullYear(selectedDate.getFullYear() + 1);
@@ -1074,6 +1154,7 @@ function setupEventListeners() {
                     // המרת השנה העברית לתאריך גרגוריאני
                     const hebDate = new HDate(1, 7, validatedYear);
                     selectedDate = hebDate.greg();
+                    currentHebrewYear = validatedYear;  // Update currentHebrewYear
                 } else {
                     selectedDate.setFullYear(validatedYear);
                 }
@@ -1091,7 +1172,7 @@ function setupEventListeners() {
     const settingsForm = document.getElementById('settingsForm');
     if (settingsForm) {
         settingsForm.addEventListener('submit', (event) => {
-            event.preventDefault(); // מניעת התנהגות ברירת המחדל של הטופס
+            event.preventDefault(); // מניעת התנהגות ברירת המחדד של הטופס
             
             // שמירת ההגדרות
             const formData = new FormData(settingsForm);
@@ -1127,33 +1208,10 @@ window.addEventListener('offline', () => {
 
 // אתחול האפליקציה
 document.addEventListener('DOMContentLoaded', () => {
+    initializeCurrentHebrewYear();
     initCalendar();
 });
 
 function convertNumberToHebrewYear(year) {
     return numberToHebrewLetters(year);
-}
-
-function getMonthNames(year) {
-    const months = [];
-    const isHebrew = isHebrewDisplay;
-    
-    if (isHebrew) {
-        // Hebrew months with special handling for leap years
-        const isLeap = isLeapYear(year);
-        
-        const monthsToUse = isLeap ? hebrewMonthOrderLeap : hebrewMonthOrder;
-        
-        monthsToUse.forEach(monthName => {
-            months.push(monthName);
-        });
-    } else {
-        // Gregorian months in order
-        for (let i = 1; i <= 12; i++) {
-            const monthDate = new Date(year, i - 1, 1);
-            months.push(monthDate.toLocaleString('he', { month: 'long' }));
-        }
-    }
-    
-    return months;
 }
