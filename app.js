@@ -1,5 +1,9 @@
 import { HebrewCalendar, HDate, Location, Event } from '@hebcal/core';
 
+// הגדרת ברירת המחדד לשפה העברית
+HebrewCalendar.defaultLocale = 'he';
+Event.defaultLocale = 'he';  // חשוב להגדיר גם את ברירת המחדד של האירועים
+
 // אתחול משתנים גלובליים
 let currentDate = new Date();
 let selectedDate = new Date(); // אתחול selectedDate עם תאריך היום הנוכחי
@@ -499,6 +503,13 @@ function setupMonthSelect() {
     });
 }
 
+// הגדרות גלובליות לאירועים
+const eventOptions = {
+    locale: 'he',
+    isHebrewYear: true,
+    candlelighting: true
+};
+
 // פונקציה לבדיקה האם השנה מעוברת
 function isLeapYear(year) {
     return HDate.isLeapYear(year);
@@ -642,7 +653,7 @@ function applySettings() {
                         const dateObj = new Date(currentYear, currentMonth, dayOfMonth);
                         const hebDate = new HDate(dateObj);
                         
-                        const events = HebrewCalendar.getHolidaysOnDate(hebDate);
+                        const events = HebrewCalendar.getHolidaysOnDate(hebDate, eventOptions);
                         if (events && events.length > 0) {
                             const newEventIndicator = document.createElement('div');
                             newEventIndicator.className = 'event-indicator';
@@ -882,7 +893,7 @@ function createDayElement(date, container, isOutsideMonth) {
     // טעינת אירועים רק אם האפשרות מופעלת בהגדרות
     if (currentSettings && currentSettings.showEvents && (!events || events.length === 0)) {
         try {
-            events = HebrewCalendar.getHolidaysOnDate(hebDate);
+            events = HebrewCalendar.getHolidaysOnDate(hebDate, eventOptions);
         } catch (error) {
             console.error('שגיאה בטעינת אירועים:', error);
         }
@@ -940,12 +951,13 @@ function showDayDetails(date, events = []) {
     
     // הצגת התאריך
     const hebDate = new HDate(date);
+    let eventsList = [];
     const currentSettings = loadSettings();
     
     // טעינת אירועים רק אם האפשרות מופעלת בהגדרות
     if (currentSettings && currentSettings.showEvents && (!events || events.length === 0)) {
         try {
-            events = HebrewCalendar.getHolidaysOnDate(hebDate);
+            events = HebrewCalendar.getHolidaysOnDate(hebDate, eventOptions);
         } catch (error) {
             console.error('שגיאה בטעינת אירועים:', error);
         }
@@ -961,12 +973,12 @@ function showDayDetails(date, events = []) {
     // הצגת אירועים
     modalEvents.innerHTML = '';
     if (events && events.length > 0) {
-        const eventsList = document.createElement('ul');
+        eventsList = document.createElement('ul');
         events.forEach(event => {
             if (event.date && event.date.getMonth) {
                 const month = event.date.getMonth();
                 const li = document.createElement('li');
-                li.textContent = event.getDesc('he');
+                li.textContent = event.render('he');
                 eventsList.appendChild(li);
             } else {
                 console.error('Invalid event date:', event);
