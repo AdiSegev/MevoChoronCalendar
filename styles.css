@@ -376,6 +376,42 @@ header {
     color: #333;
 }
 
+.times-section {
+    margin: 20px 0;
+}
+
+.times-section h3 {
+    color: #2c3e50;
+    margin: 0 0 20px 0;
+    text-align: center;
+    font-size: 1.3em;
+}
+
+.time-group {
+    margin: 10px 0;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+    border-right: 4px solid #3498db;
+}
+
+.time-group p {
+    margin: 8px 0;
+    font-size: 0.95em;
+    color: #34495e;
+}
+
+.time-group:not(:last-child) {
+    margin-bottom: 15px;
+}
+
+.events-section {
+    margin-top: 20px;
+    padding: 10px;
+    background-color: #e8f4f8;
+    border-radius: 5px;
+}
+
 .settings-form {
     display: flex;
     flex-direction: column;

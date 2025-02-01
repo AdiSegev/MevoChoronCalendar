@@ -943,80 +943,193 @@ function showDayDetails(date, events = []) {
     const modalEvents = document.getElementById('modalEvents');
     const modalZmanim = document.getElementById('modalZmanim');
     const closeBtn = modal.querySelector('.close');
-    
-    if (!modal || !modalDate || !modalEvents || !modalZmanim) {
-        console.error('לא נמצאו אלמנטים נדרשים להצגת פרטי היום');
-        return;
-    }
+
+    // קבלת הזמנים של היום הנבחר
+    const dayTimes = timesManager.getTimesForDate(date);
+
+    // המרה לתאריך עברי
+    const hebDate = new HDate(date);
+    const hebrewMonthName = getHebrewMonthName(hebDate.getMonth(), hebDate.getFullYear());
     
     // הצגת התאריך
-    const hebDate = new HDate(date);
-    let eventsList = [];
-    const currentSettings = loadSettings();
-    
-    // טעינת אירועים רק אם האפשרות מופעלת בהגדרות
-    if (currentSettings && currentSettings.showEvents && (!events || events.length === 0)) {
-        try {
-            events = HebrewCalendar.getHolidaysOnDate(hebDate, eventOptions);
-        } catch (error) {
-            console.error('שגיאה בטעינת אירועים:', error);
-        }
-    }
-    
-    // הצגת התאריך העברי והלועזי
-    const hebrewMonthName = getHebrewMonthName(hebDate.getMonth(), hebDate.getFullYear());
     modalDate.innerHTML = `
         <div class="hebrew-date">${numberToHebrewLetters(hebDate.getDate())} ${hebrewMonthName} ${numberToHebrewLetters(hebDate.getFullYear())}</div>
         <div class="gregorian-date">${date.toLocaleDateString('he-IL')}</div>
     `;
-    
+
+    // הצגת זמני היום
+    if (dayTimes) {
+        let timesContent = '<div class="times-section">';
+        timesContent += '<h3>זמני היום</h3>';
+        
+        // זמני בוקר
+        timesContent += '<div class="time-group">';
+        timesContent += `<p>עלות השחר: ${dayTimes.dawn72} (72 דק׳)</p>`;
+        timesContent += `<p>זמן טלית ותפילין: ${dayTimes.talitTefilin}</p>`;
+        timesContent += `<p>הנץ החמה: ${dayTimes.sunrise}</p>`;
+        timesContent += '</div>';
+
+        // זמני קריאת שמע ותפילה
+        timesContent += '<div class="time-group">';
+        timesContent += `<p>סוף זמן ק"ש (גר"א): ${dayTimes.shemaGra}</p>`;
+        timesContent += `<p>סוף זמן ק"ש (מג"א): ${dayTimes.shemaMga72}</p>`;
+        timesContent += `<p>סוף זמן תפילה (גר"א): ${dayTimes.tefilaGra}</p>`;
+        timesContent += '</div>';
+
+        // זמני צהריים ומנחה
+        timesContent += '<div class="time-group">';
+        timesContent += `<p>חצות: ${dayTimes.chatzot}</p>`;
+        timesContent += `<p>מנחה גדולה: ${dayTimes.minchaGedola}</p>`;
+        timesContent += `<p>מנחה קטנה: ${dayTimes.minchaKetana}</p>`;
+        timesContent += `<p>פלג המנחה: ${dayTimes.plag}</p>`;
+        timesContent += '</div>';
+
+        // זמני ערב
+        timesContent += '<div class="time-group">';
+        timesContent += `<p>שקיעה: ${dayTimes.sunset}</p>`;
+        timesContent += `<p>צאת הכוכבים: ${dayTimes.tzeit1}</p>`;
+        timesContent += '</div>';
+        
+        timesContent += '</div>';
+        
+        modalZmanim.innerHTML = timesContent;
+    }
+
     // הצגת אירועים
     modalEvents.innerHTML = '';
     if (events && events.length > 0) {
-        eventsList = document.createElement('ul');
+        let eventsContent = '<div class="events-section">';
         events.forEach(event => {
-            if (event.date && event.date.getMonth) {
-                const month = event.date.getMonth();
-                const li = document.createElement('li');
-                li.textContent = event.render('he');
-                eventsList.appendChild(li);
+            if (event.render) {
+                eventsContent += `<p>${event.render('he')}</p>`;
             } else {
-                console.error('Invalid event date:', event);
+                eventsContent += `<p>${event}</p>`;
             }
         });
-        modalEvents.appendChild(eventsList);
+        eventsContent += '</div>';
+        modalEvents.innerHTML = eventsContent;
     } else {
-        modalEvents.textContent = 'אין אירועים';
+        modalEvents.innerHTML = '<p>אין אירועים</p>';
     }
-    
-    // הצגת זמנים
-    try {
-        const times = HebrewCalendar.getSunriseSunset(date, defaultLocation);
-        modalZmanim.innerHTML = `
-            <p>זריחה: ${times.sunrise.toLocaleTimeString('he-IL')}</p>
-            <p>שקיעה: ${times.sunset.toLocaleTimeString('he-IL')}</p>
-        `;
-    } catch (error) {
-        console.error('שגיאה בטעינת זמנים:', error);
-        modalZmanim.textContent = 'לא ניתן לטעון זמנים';
-    }
-    
-    // הצגת המודאל
+
     modal.classList.add('visible');
-    
+
     // סגירת המודאל
     const closeModal = () => {
         modal.classList.remove('visible');
     };
-    
-    // מאזיני אירועים לסגירת המודאל
-    closeBtn.addEventListener('click', closeModal);
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
+
+    closeBtn.onclick = closeModal;
+    modal.onclick = function(event) {
+        if (event.target === modal) {
             closeModal();
         }
-    });
+    };
 }
+
+// הגדרת מחלקת DayTimes
+class DayTimes {
+    constructor(rowData) {
+        this.rtzeit72 = rowData[0];          // מוצאי שבת ר"ת 72 דק'
+        this.hazon40 = rowData[1];           // מוצאי שבת חזו"א 40 דק'
+        this.shabbatEnd = rowData[2];        // מוצאי שבת
+        this.tzeit1 = rowData[3];            // צאת הכוכבים 1
+        this.tzeit2 = rowData[4];            // צאת הכוכבים 2
+        this.tzeit3 = rowData[5];            // צאת הכוכבים 3
+        this.sunset = rowData[6];            // שקיעת החמה
+        this.candlelighting = rowData[7];    // הדלקת נרות שבת
+        this.plag = rowData[8];              // פלג המנחה
+        this.minchaKetana = rowData[9];      // מנחה קטנה
+        this.minchaGedola = rowData[10];     // מנחה גדולה
+        this.chatzot = rowData[11];          // חצות יום ולילה
+        this.tefilaGra = rowData[12];        // סוף זמן תפילה גר"א
+        this.tefilaMga72 = rowData[13];      // סוף זמן תפילה מג"א 72
+        this.tefilaMga90 = rowData[14];      // סוף זמן תפילה מג"א 90
+        this.shemaGra = rowData[15];         // סוף זמן ק"ש גר"א
+        this.shemaMga72 = rowData[16];       // סוף זמן ק"ש מג"א 72
+        this.shemaMga90 = rowData[17];       // סוף זמן ק"ש מג"א 90
+        this.sunrise = rowData[18];          // הנץ החמה
+        this.talitTefilin = rowData[19];     // זמן ציצית ותפילין
+        this.dawn72 = rowData[20];           // עלות השחר 72 דק'
+        this.dawn90 = rowData[21];           // עלות השחר 90 דק'
+        this.dayOfMonth = rowData[22];       // יום בחודש
+    }
+}
+
+// הגדרת מחלקת TimesManager
+class TimesManager {
+    constructor() {
+        // מפה של כל הנתונים: מפתח = חודש (1-12), ערך = מערך של ימים
+        this.monthsData = new Map();
+    }
+
+    // טעינת הנתונים מקובץ Excel
+    async initialize() {
+        try {
+            const XLSX = await import('https://cdn.sheetjs.com/xlsx-0.19.3/package/xlsx.mjs');
+            const response = await fetch('tables/tables.xlsx');
+            const data = new Uint8Array(await response.arrayBuffer());
+            const workbook = XLSX.read(data, { type: 'array' });
+            
+            // נעבור על כל הגליונות (1-12)
+            for (let month = 1; month <= 12; month++) {
+                const worksheet = workbook.Sheets[month.toString()];
+                if (worksheet) {
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
+                        header: 1,
+                        raw: false
+                    });
+                    
+                    // נדלג על שורת הכותרות ונמפה כל שורה לאובייקט DayTimes
+                    const daysData = jsonData.slice(1)
+                        .map(row => new DayTimes(row))
+                        .filter(day => day.dayOfMonth); // נסנן שורות ריקות
+                    
+                    this.monthsData.set(month, daysData);
+                }
+            }
+            
+            console.log('נתוני הזמנים נטענו בהצלחה');
+            return true;
+        } catch (error) {
+            console.error('שגיאה בטעינת קובץ הזמנים:', error);
+            return false;
+        }
+    }
+
+    // קבלת נתוני יום ספציפי
+    getTimesForDate(date) {
+        const month = date.getMonth() + 1;  // getMonth() מחזיר 0-11
+        const day = date.getDate();
+        
+        const monthData = this.monthsData.get(month);
+        if (!monthData) return null;
+        
+        return monthData.find(dayTimes => 
+            parseInt(dayTimes.dayOfMonth) === day
+        );
+    }
+
+    // קבלת כל הנתונים של חודש מסוים
+    getMonthData(month) {
+        return this.monthsData.get(month) || [];
+    }
+}
+
+// יצירת instance יחיד של TimesManager
+const timesManager = new TimesManager();
+
+// טעינת הנתונים כשהדף נטען
+document.addEventListener('DOMContentLoaded', async () => {
+    await timesManager.initialize();
+    
+    // דוגמה: הדפסת זמני היום הנוכחי
+    const today = new Date();
+    const todayTimes = timesManager.getTimesForDate(today);
+    if (todayTimes) {
+        console.log('זמני היום הנוכחי:', todayTimes);
+    }
+});
 
 // הגדרת מאזיני אירועים
 function setupEventListeners() {
@@ -1322,3 +1435,54 @@ document.addEventListener('DOMContentLoaded', () => {
 function convertNumberToHebrewYear(year) {
     return numberToHebrewLetters(year);
 }
+
+// קריאת נתונים מקובץ Excel
+async function loadTimesData() {
+    try {
+        const XLSX = await import('https://cdn.sheetjs.com/xlsx-0.19.3/package/xlsx.mjs');
+        const response = await fetch('tables/tables.xlsx');
+        const data = new Uint8Array(await response.arrayBuffer());
+        const workbook = XLSX.read(data, { type: 'array' });
+        
+        console.log('=== בדיקת נתונים - השוואה בין שתי השיטות ===');
+        
+        // נעבור על כל הגליונות (1-12)
+        for (let month = 1; month <= 12; month++) {
+            const worksheet = workbook.Sheets[month.toString()];
+            if (worksheet) {
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
+                    header: 1,
+                    raw: false
+                });
+                
+                // נמצא את השורה של ה-1 בחודש (נדלג על שורת הכותרות)
+                const firstDayRow = jsonData[1];
+                if (firstDayRow) {
+                    // נתונים מהקריאה הישירה
+                    const sunrise = firstDayRow[18];
+                    console.log(`\nחודש ${month}:`);
+                    console.log(`קריאה ישירה: זמן זריחה ב-1 לחודש: ${sunrise}`);
+                    
+                    // נתונים מה-TimesManager
+                    const date = new Date(2025, month - 1, 1);  // שנת 2025 כדוגמה
+                    const dayTimes = timesManager.getTimesForDate(date);
+                    if (dayTimes) {
+                        console.log(`TimesManager: זמן זריחה ב-1 לחודש: ${dayTimes.sunrise}`);
+                        console.log(`TimesManager: זמני תפילה נוספים ליום זה:`);
+                        console.log(`- הנץ החמה: ${dayTimes.sunrise}`);
+                        console.log(`- שקיעה: ${dayTimes.sunset}`);
+                        console.log(`- צאת הכוכבים: ${dayTimes.tzeit1}`);
+                        console.log(`- סוף זמן ק"ש גר"א: ${dayTimes.shemaGra}`);
+                    }
+                }
+            }
+        }
+        
+        console.log('\nבדיקת הנתונים הושלמה');
+    } catch (error) {
+        console.error('שגיאה בטעינת קובץ הזמנים:', error);
+    }
+}
+
+// טעינת הנתונים כשהדף נטען
+document.addEventListener('DOMContentLoaded', loadTimesData);
