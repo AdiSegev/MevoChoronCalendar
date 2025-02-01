@@ -257,6 +257,16 @@ header {
     opacity: 0.9;
 }
 
+.event-indicator {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    width: 8px;
+    height: 8px;
+    background-color: var(--primary-color);
+    border-radius: 50%;
+}
+
 .primary-date {
     font-size: 1.5em;
     font-weight: bold;
