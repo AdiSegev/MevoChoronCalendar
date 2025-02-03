@@ -65,59 +65,71 @@
         <div id="settingsModal" class="modal">
             <div class="modal-content">
                 <span class="close">&times;</span>
-                <h3>הגדרות</h3>
-                <form id="settingsForm" class="settings-form">
-                    <div class="setting-item">
-                        <label for="fontSize">גודל טקסט:</label>
-                        <select id="fontSize" name="fontSize">
+                <h2>הגדרות</h2>
+                <form id="settingsForm">
+                    <!-- גודל טקסט -->
+                    <div class="settings-group">
+                        <h3>גודל טקסט</h3>
+                        <select name="fontSize">
                             <option value="small">קטן</option>
-                            <option value="medium" selected>בינוני</option>
+                            <option value="medium">בינוני</option>
                             <option value="large">גדול</option>
                         </select>
                     </div>
-                    <div class="setting-item">
-                        <label for="showEvents">הצג אירועים:</label>
-                        <input type="checkbox" id="showEvents" name="showEvents" checked>
-                    </div>
-                    <div class="setting-item">
-                        <label for="themeColor">צבע נושא:</label>
-                        <select id="themeColor" name="themeColor">
+
+                    <!-- צבע נושא -->
+                    <div class="settings-group">
+                        <h3>צבע נושא</h3>
+                        <select name="themeColor">
                             <option value="blue">כחול</option>
                             <option value="green">ירוק</option>
                             <option value="orange">כתום</option>
                         </select>
                     </div>
 
-                    <h3 class="settings-section-header">זמני היום</h3>
-                    
-                    <div class="setting-item">
-                        <label for="alotHashachar">עלות השחר:</label>
-                        <select id="alotHashachar" name="alotHashachar">
-                            <option value="72" selected>72 דק' לפני הנץ</option>
-                            <option value="90">90 דק' לפני הנץ</option>
-                        </select>
+                    <!-- הצגת אירועים -->
+                    <div class="settings-group">
+                        <h3>אירועים</h3>
+                        <label>
+                            <input type="checkbox" name="showEvents">
+                            הצג אירועים בלוח השנה
+                        </label>
                     </div>
 
-                    <div class="setting-item">
-                        <label for="tzeit">צאת הכוכבים:</label>
-                        <select id="tzeit" name="tzeit">
-                            <option value="14">14 דק' אחרי שקיעה</option>
-                            <option value="22.5" selected>22.5 דק' אחרי שקיעה</option>
-                            <option value="24">24 דק' אחרי שקיעה</option>
-                        </select>
+                    <!-- זמני היום -->
+                    <div class="settings-group">
+                        <h3>זמני היום</h3>
+                        
+                        <!-- עלות השחר -->
+                        <div class="setting-item">
+                            <label>עלות השחר:</label>
+                            <select name="dawnType">
+                                <option value="72">72 דקות לפני הנץ</option>
+                                <option value="90">90 דקות לפני הנץ</option>
+                            </select>
+                        </div>
+
+                        <!-- צאת הכוכבים -->
+                        <div class="setting-item">
+                            <label>צאת הכוכבים:</label>
+                            <select name="tzeitType">
+                                <option value="14">14 דקות אחרי שקיעה</option>
+                                <option value="22.5">22.5 דקות אחרי שקיעה</option>
+                                <option value="24">24 דקות אחרי שקיעה</option>
+                            </select>
+                        </div>
+
+                        <!-- מוצאי שבת -->
+                        <div class="setting-item">
+                            <label>מוצאי שבת:</label>
+                            <select name="shabbatEndType">
+                                <option value="regular">זמן רגיל</option>
+                                <option value="hazon">חזון איש</option>
+                            </select>
+                        </div>
                     </div>
 
-                    <div class="setting-item">
-                        <label for="motzash">מוצאי שבת:</label>
-                        <select id="motzash" name="motzash">
-                            <option value="regular" selected>רגיל</option>
-                            <option value="chazon">חזו"א</option>
-                        </select>
-                    </div>
-
-                    <div class="setting-item">
-                        <button type="submit" class="save-btn">שמור הגדרות</button>
-                    </div>
+                    <button type="submit">שמור הגדרות</button>
                 </form>
             </div>
         </div>
@@ -126,12 +138,12 @@
     <!-- Toast notification -->
     <div id="toast" class="toast"></div>
 
-    <script type="module" src="/app.js"></script>
+    <script type="module" src="app.js"></script>
     <script type="module">
         // Register Service Worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js')
+                navigator.serviceWorker.register('sw.js')
                     .then(registration => {
                         console.log('ServiceWorker registered:', registration);
                     })

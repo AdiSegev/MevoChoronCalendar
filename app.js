@@ -590,11 +590,14 @@ function loadSettings() {
     const defaultSettings = {
         fontSize: 'medium',
         showEvents: true,
-        themeColor: 'blue'
+        themeColor: 'blue',
+        dawnType: '72',           // '72' או '90' דקות
+        tzeitType: '14',          // '14', '22.5', או '24' דקות
+        shabbatEndType: 'regular' // 'regular' או 'hazon'
     };
     
     try {
-        const savedSettings = localStorage.getItem('calendarSettings');
+        const savedSettings = localStorage.getItem('settings');
         return savedSettings ? JSON.parse(savedSettings) : defaultSettings;
     } catch (error) {
         console.error('Error loading settings:', error);
@@ -603,68 +606,66 @@ function loadSettings() {
 }
 
 // שמירת הגדרות באחסון המקומי
-function saveSettings() {
-    localStorage.setItem('calendarSettings', JSON.stringify(settings));
+function saveSettings(formData) {
+    const settings = {
+        fontSize: formData.get('fontSize'),
+        showEvents: formData.get('showEvents') === 'on',
+        themeColor: formData.get('themeColor'),
+        dawnType: formData.get('dawnType'),
+        tzeitType: formData.get('tzeitType'),
+        shabbatEndType: formData.get('shabbatEndType')
+    };
+    
+    localStorage.setItem('settings', JSON.stringify(settings));
     applySettings();
+    renderCalendar(); // הוספת קריאה ל-renderCalendar אחרי שמירת ההגדרות
+    
+    // עדכון מחדש של תצוגת היום הנוכחי אם המודאל פתוח
+    const dayModal = document.getElementById('dayModal');
+    if (dayModal && dayModal.style.display === 'block') {
+        const selectedDay = document.querySelector('.selected-day');
+        if (selectedDay) {
+            const date = new Date(selectedDay.dataset.date);
+            showDayDetails(date);
+        }
+    }
 }
 
 // החלת ההגדרות על העיצוב
 function applySettings() {
-    // טעינת ההגדרות הנוכחיות
-    const currentSettings = loadSettings();
+    const settings = loadSettings();
     
-    // עדכון גודל הפונט
-    if (currentSettings.fontSize) {
-        document.body.classList.remove('small-font', 'medium-font', 'large-font');
-        document.body.classList.add(`${currentSettings.fontSize}-font`);
+    // עדכון הטופס עם הערכים השמורים
+    const form = document.getElementById('settingsForm');
+    if (form) {
+        form.fontSize.value = settings.fontSize;
+        form.themeColor.value = settings.themeColor;
+        form.showEvents.checked = settings.showEvents;
+        form.dawnType.value = settings.dawnType;
+        form.tzeitType.value = settings.tzeitType;
+        form.shabbatEndType.value = settings.shabbatEndType;
     }
+
+    // החלת גודל הטקסט
+    document.documentElement.style.setProperty('--font-size-multiplier', getFontSizeMultiplier(settings.fontSize));
     
-    // עדכון צבע הנושא
-    if (currentSettings.themeColor) {
-        document.body.classList.remove('blue-theme', 'green-theme', 'orange-theme');
-        document.body.classList.add(`${currentSettings.themeColor}-theme`);
-    }
+    // החלת צבע הנושא
+    document.documentElement.style.setProperty('--theme-color', getThemeColor(settings.themeColor));
     
-    // עדכון תצוגת אירועים
-    const daysGrid = document.getElementById('daysGrid');
-    if (daysGrid) {
-        const dayElements = daysGrid.querySelectorAll('.day');
-        dayElements.forEach((dayElement, index) => {
-            const eventIndicator = dayElement.querySelector('.event-indicator');
-            
-            // הסרת סמן אירועים קיים
-            if (eventIndicator) {
-                eventIndicator.remove();
-            }
-            
-            // הוספת סמן אירועים אם נדרש
-            if (currentSettings.showEvents) {
-                try {
-                    // חישוב התאריך הנוכחי
-                    const currentMonth = selectedDate.getMonth();
-                    const currentYear = selectedDate.getFullYear();
-                    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-                    
-                    // חישוב התאריך בהתבסס על האינדקס
-                    const dayOfMonth = index - (new Date(currentYear, currentMonth, 1).getDay()) + 1;
-                    
-                    // וודא שהתאריך תקף
-                    if (dayOfMonth > 0 && dayOfMonth <= daysInMonth) {
-                        const dateObj = new Date(currentYear, currentMonth, dayOfMonth);
-                        const hebDate = new HDate(dateObj);
-                        
-                        const events = HebrewCalendar.getHolidaysOnDate(hebDate, eventOptions);
-                        if (events && events.length > 0) {
-                            const newEventIndicator = document.createElement('div');
-                            newEventIndicator.className = 'event-indicator';
-                            dayElement.appendChild(newEventIndicator);
-                        }
-                    }
-                } catch (error) {
-                    console.error('שגיאה בטעינת אירועים:', error);
-                }
-            }
-        });
+    // עדכון תצוגת האירועים
+    const calendarDays = document.querySelectorAll('.day');
+    calendarDays.forEach(day => {
+        const eventsContainer = day.querySelector('.events');
+        if (eventsContainer) {
+            eventsContainer.style.display = 'block';
+        }
+    });
+
+    // רענון תצוגת היום הנוכחי אם המודאל פתוח
+    const dayModal = document.getElementById('dayModal');
+    if (dayModal && dayModal.classList.contains('visible')) {
+        const selectedDate = new Date(dayModal.dataset.date);
+        showDayDetails(selectedDate);
     }
 }
 
@@ -736,7 +737,7 @@ function renderCalendar() {
             // חישוב היום בשבוע של תחילת החודש העברי (0 = ראשון)
             const startingDay = firstGregorianDate.getDay();
             
-            // קבלת שם החודש העברי
+            // הצגת שם החודש
             const monthName = getHebrewMonthName(hebMonth, hebYear);
             const hebrewYear = numberToHebrewLetters(hebYear);
             currentMonthElement.textContent = monthName;
@@ -887,65 +888,66 @@ function createDayElement(date, container, isOutsideMonth) {
     }
 
     const hebDate = new HDate(date);
-    let events = [];
-    const currentSettings = loadSettings();
     
-    // טעינת אירועים רק אם האפשרות מופעלת בהגדרות
-    if (currentSettings && currentSettings.showEvents && (!events || events.length === 0)) {
+    // בדיקה אם יש אירועים ביום זה והאם להציג אותם
+    const settings = loadSettings();
+    if (settings.showEvents) {
         try {
-            events = HebrewCalendar.getHolidaysOnDate(hebDate, eventOptions);
+            const events = HebrewCalendar.getHolidaysOnDate(hebDate, eventOptions);
+            if (events && events.length > 0) {
+                dayElement.classList.add('has-event');
+            }
         } catch (error) {
             console.error('שגיאה בטעינת אירועים:', error);
         }
     }
     
-    // תאריך ראשי
-    const primaryDate = document.createElement('div');
-    primaryDate.className = 'primary-date';
-    
-    // תאריך משני
-    const secondaryDate = document.createElement('div');
-    secondaryDate.className = 'secondary-date';
-    
-    if (isHebrewDisplay) {
-        primaryDate.textContent = numberToHebrewLetters(hebDate.getDate());
-        const gregorianMonth = date.toLocaleString('he-IL', { month: 'short' });
-        secondaryDate.textContent = `${date.getDate()} ${gregorianMonth}`;
-    } else {
-        primaryDate.textContent = date.getDate().toString();
-        const hebMonth = getHebrewMonthName(hebDate.getMonth(), hebDate.getFullYear());
-        secondaryDate.textContent = `${numberToHebrewLetters(hebDate.getDate())} ${hebMonth}`;
-    }
-    
-    dayElement.appendChild(primaryDate);
-    dayElement.appendChild(secondaryDate);
-    
-    // הוספת אירועים רק אם הם קיימים והאפשרות מופעלת
-    if (currentSettings && currentSettings.showEvents && events && events.length > 0) {
-        const eventIndicator = document.createElement('div');
-        eventIndicator.className = 'event-indicator';
-        dayElement.appendChild(eventIndicator);
-    }
+    // שמירת התאריך כמידע על האלמנט
+    dayElement.dataset.date = date.toISOString();
     
     // הוספת אירוע לחיצה
     dayElement.addEventListener('click', () => {
-        handleDayClick(dayElement, date);
-        showDayDetails(date, events);
+        // הסרת הבחירה הקודמת
+        clearSelectedDay();
+        
+        // הוספת סימון לתא הנבחר
+        dayElement.classList.add('selected-day');
+        
+        // שמירת התאריך הנבחר
+        selectedDate = date;
+        
+        // הצגת פרטי היום
+        showDayDetails(date);
     });
-    
+
+    // יצירת תצוגת התאריך
+    const dateContainer = document.createElement('div');
+    dateContainer.classList.add('date-container');
+
+    // תאריך לועזי
+    const gregorianDate = document.createElement('div');
+    gregorianDate.classList.add('gregorian-date');
+    gregorianDate.textContent = date.getDate();
+    dateContainer.appendChild(gregorianDate);
+
+    // תאריך עברי
+    const hebrewDate = document.createElement('div');
+    hebrewDate.classList.add('hebrew-date');
+    hebrewDate.textContent = numberToHebrewLetters(hebDate.getDate());
+    dateContainer.appendChild(hebrewDate);
+
+    dayElement.appendChild(dateContainer);
     container.appendChild(dayElement);
+
+    return dayElement;
 }
 
 // הצגת פרטי היום
-function showDayDetails(date, events = []) {
+function showDayDetails(date) {
     const modal = document.getElementById('dayModal');
     const modalDate = document.getElementById('modalDate');
     const modalEvents = document.getElementById('modalEvents');
     const modalZmanim = document.getElementById('modalZmanim');
-    const closeBtn = modal.querySelector('.close');
-
-    // קבלת הזמנים של היום הנבחר
-    const dayTimes = timesManager.getTimesForDate(date);
 
     // המרה לתאריך עברי
     const hebDate = new HDate(date);
@@ -957,74 +959,101 @@ function showDayDetails(date, events = []) {
         <div class="gregorian-date">${date.toLocaleDateString('he-IL')}</div>
     `;
 
-    // הצגת זמני היום
-    if (dayTimes) {
-        let timesContent = '<div class="times-section">';
-        timesContent += '<h3>זמני היום</h3>';
-        
-        // זמני בוקר
-        timesContent += '<div class="time-group">';
-        timesContent += `<p>עלות השחר: ${dayTimes.dawn72} (72 דק׳)</p>`;
-        timesContent += `<p>זמן טלית ותפילין: ${dayTimes.talitTefilin}</p>`;
-        timesContent += `<p>הנץ החמה: ${dayTimes.sunrise}</p>`;
-        timesContent += '</div>';
+    // טעינת אירועים
+    const settings = loadSettings();
+    
+    try {
+        const events = HebrewCalendar.getHolidaysOnDate(hebDate, eventOptions);
+        if (events && events.length > 0) {
+            modalEvents.innerHTML = `
+                <div class="events-section">
+                    <h3>אירועים</h3>
+                    ${events.map(event => `<div>${event.render('he')}</div>`).join('')}
+                </div>
+            `;
+        } else {
+            modalEvents.innerHTML = '';
+        }
+    } catch (error) {
+        console.error('שגיאה בטעינת אירועים:', error);
+            modalEvents.innerHTML = '';
+        }
+    
 
-        // זמני קריאת שמע ותפילה
-        timesContent += '<div class="time-group">';
-        timesContent += `<p>סוף זמן ק"ש (גר"א): ${dayTimes.shemaGra}</p>`;
-        timesContent += `<p>סוף זמן ק"ש (מג"א): ${dayTimes.shemaMga72}</p>`;
-        timesContent += `<p>סוף זמן תפילה (גר"א): ${dayTimes.tefilaGra}</p>`;
-        timesContent += '</div>';
-
-        // זמני צהריים ומנחה
-        timesContent += '<div class="time-group">';
-        timesContent += `<p>חצות: ${dayTimes.chatzot}</p>`;
-        timesContent += `<p>מנחה גדולה: ${dayTimes.minchaGedola}</p>`;
-        timesContent += `<p>מנחה קטנה: ${dayTimes.minchaKetana}</p>`;
-        timesContent += `<p>פלג המנחה: ${dayTimes.plag}</p>`;
-        timesContent += '</div>';
-
-        // זמני ערב
-        timesContent += '<div class="time-group">';
-        timesContent += `<p>שקיעה: ${dayTimes.sunset}</p>`;
-        timesContent += `<p>צאת הכוכבים: ${dayTimes.tzeit1}</p>`;
-        timesContent += '</div>';
-        
-        timesContent += '</div>';
-        
-        modalZmanim.innerHTML = timesContent;
+    // קבלת הזמנים ליום הנבחר
+    const dayTimes = timesManager.getTimesForDate(date);
+    if (!dayTimes) {
+        console.error('לא נמצאו זמנים לתאריך זה');
+        return;
     }
 
-    // הצגת אירועים
-    modalEvents.innerHTML = '';
-    if (events && events.length > 0) {
-        let eventsContent = '<div class="events-section">';
-        events.forEach(event => {
-            if (event.render) {
-                eventsContent += `<p>${event.render('he')}</p>`;
-            } else {
-                eventsContent += `<p>${event}</p>`;
-            }
-        });
-        eventsContent += '</div>';
-        modalEvents.innerHTML = eventsContent;
-    } else {
-        modalEvents.innerHTML = '<p>אין אירועים</p>';
+    // סינון הזמנים לפי הגדרות המשתמש
+    const filteredTimes = filterTimesBySettings(dayTimes, date);
+
+    // יצירת תצוגת הזמנים
+    let timesContent = '<div class="times-section">';
+    timesContent += '<h3>זמני היום</h3>';
+    timesContent += '<div class="time-group">';
+
+    // זמני הבוקר
+    filteredTimes.dawn = dayTimes.dawn72;  // Always use dawn72
+    timesContent += `<div>עלות השחר: ${filteredTimes.dawn}</div>`;
+    timesContent += `<div>זמן טלית ותפילין: ${filteredTimes.talitTefilin}</div>`;  // Always display talitTefilin
+    timesContent += `<div>הנץ החמה: ${filteredTimes.sunrise}</div>`;
+
+    // זמני קריאת שמע ותפילה
+    timesContent += `<div>סוף זמן ק"ש (גר"א): ${filteredTimes.shemaGra}</div>`;
+    if (filteredTimes.shemaMga) {
+        timesContent += `<div>סוף זמן ק"ש (מג"א): ${filteredTimes.shemaMga}</div>`;
     }
+    timesContent += `<div>סוף זמן תפילה (גר"א): ${filteredTimes.tefilaGra}</div>`;
+    if (filteredTimes.tefilaMga) {
+        timesContent += `<div>סוף זמן תפילה (מג"א): ${filteredTimes.tefilaMga}</div>`;
+    }
+
+    // זמנים קבועים שתמיד מוצגים
+    timesContent += `<div>חצות: ${filteredTimes.chatzot}</div>`;
+    timesContent += `<div>מנחה גדולה: ${filteredTimes.minchaGedola}</div>`;
+    timesContent += `<div>מנחה קטנה: ${filteredTimes.minchaKetana}</div>`;
+    timesContent += `<div>פלג המנחה: ${filteredTimes.plag}</div>`;
+
+    // זמני ערב שבת
+    if (date.getDay() === 5) { // יום שישי
+        timesContent += `<div>הדלקת נרות: ${filteredTimes.candlelighting}</div>`;
+    }
+    
+    timesContent += `<div>שקיעת החמה: ${filteredTimes.sunset}</div>`;
+    timesContent += `<div>צאת הכוכבים: ${filteredTimes.tzeit}</div>`; // Always display tzeit
+
+    // זמני מוצאי שבת
+    if (date.getDay() === 6) { // שבת
+        // מוצאי שבת רגיל או חזו"א
+        timesContent += `<div>מוצאי שבת: ${filteredTimes.shabbatEnd}</div>`;
+        if (filteredTimes.rtzeit72) {
+            timesContent += `<div>ר"ת: ${filteredTimes.rtzeit72}</div>`;
+        }
+    }
+
+    timesContent += '</div>';
+    timesContent += '</div>';
+    modalZmanim.innerHTML = timesContent;
 
     modal.classList.add('visible');
 
-    // סגירת המודאל
-    const closeModal = () => {
-        modal.classList.remove('visible');
-    };
-
-    closeBtn.onclick = closeModal;
+    // סגירת המודאל בלחיצה על הרקע
     modal.onclick = function(event) {
         if (event.target === modal) {
-            closeModal();
+            modal.classList.remove('visible');
         }
     };
+
+    // סגירת המודאל בלחיצה על כפתור הסגירה
+    const closeBtn = modal.querySelector('.close');
+    if (closeBtn) {
+        closeBtn.onclick = function() {
+            modal.classList.remove('visible');
+        };
+    }
 }
 
 // הגדרת מחלקת DayTimes
@@ -1311,18 +1340,8 @@ function setupEventListeners() {
         const saveSettingsBtn = settingsModal.querySelector('#saveSettings');
         if (saveSettingsBtn) {
             saveSettingsBtn.addEventListener('click', () => {
-                const fontSizeSelect = settingsModal.querySelector('#fontSize');
-                const themeColorSelect = settingsModal.querySelector('#themeColor');
-                const showEventsCheckbox = settingsModal.querySelector('#showEvents');
-                
-                settings = {
-                    fontSize: fontSizeSelect ? fontSizeSelect.value : 'medium',
-                    themeColor: themeColorSelect ? themeColorSelect.value : 'blue',
-                    showEvents: showEventsCheckbox ? showEventsCheckbox.checked : true
-                };
-                
-                // שמירת ההגדרות באחסון המקומי
-                saveSettings();
+                const formData = new FormData(settingsModal.querySelector('form'));
+                saveSettings(formData);
                 
                 // החלת ההגדרות
                 applySettings();
@@ -1392,18 +1411,9 @@ function setupEventListeners() {
     const settingsForm = document.getElementById('settingsForm');
     if (settingsForm) {
         settingsForm.addEventListener('submit', (event) => {
-            event.preventDefault(); // מניעת התנהגות ברירת המחדד של הטופס
-            
-            // שמירת ההגדרות
+            event.preventDefault(); // Prevent form submission
             const formData = new FormData(settingsForm);
-            settings = {
-                fontSize: formData.get('fontSize'),
-                showEvents: formData.get('showEvents') === 'on',
-                themeColor: formData.get('themeColor')
-            };
-            
-            // שמירת ההגדרות באחסון המקומי
-            saveSettings();
+            saveSettings(formData);
             
             // החלת ההגדרות
             applySettings();
@@ -1434,6 +1444,72 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function convertNumberToHebrewYear(year) {
     return numberToHebrewLetters(year);
+}
+
+// פונקציות עזר להגדרות
+function getFontSizeMultiplier(size) {
+    switch (size) {
+        case 'small': return '0.8';
+        case 'large': return '1.2';
+        default: return '1';
+    }
+}
+
+function getThemeColor(theme) {
+    switch (theme) {
+        case 'green': return '#4CAF50';
+        case 'orange': return '#FF9800';
+        default: return '#2196F3';
+    }
+}
+
+// סינון זמנים לפי הגדרות המשתמש
+function filterTimesBySettings(dayTimes, date) {
+    const settings = loadSettings();
+    const filteredTimes = {};
+    
+    // עלות השחר
+    filteredTimes.dawn = dayTimes.dawn72;  // Always use dawn72
+    
+    // זמני ק"ש ותפילה
+    filteredTimes.shemaGra = dayTimes.shemaGra;  // Always display shemaGra
+    filteredTimes.tefilaGra = dayTimes.tefilaGra;  // Always display tefilaGra
+    
+    // הוספת זמני מג"א בהתאם לסוג עלות השחר
+    if (settings.dawnType === '72') {
+        filteredTimes.shemaMga = dayTimes.shemaMga72;
+        filteredTimes.tefilaMga = dayTimes.tefilaMga72;
+    } else {  // '90'
+        filteredTimes.shemaMga = dayTimes.shemaMga90;
+        filteredTimes.tefilaMga = dayTimes.tefilaMga90;
+    }
+    
+    // צאת הכוכבים
+    filteredTimes.tzeit = dayTimes.tzeit1;  // Always display tzeit1
+    
+    // זמנים קבועים שתמיד מוצגים
+    filteredTimes.sunrise = dayTimes.sunrise;
+    filteredTimes.sunset = dayTimes.sunset;
+    filteredTimes.chatzot = dayTimes.chatzot;
+    filteredTimes.minchaGedola = dayTimes.minchaGedola;
+    filteredTimes.minchaKetana = dayTimes.minchaKetana;
+    filteredTimes.plag = dayTimes.plag;
+    filteredTimes.talitTefilin = dayTimes.talitTefilin;
+    
+    // זמני ערב שבת
+    if (date.getDay() === 5) { // יום שישי
+        filteredTimes.candlelighting = dayTimes.candlelighting;
+    }
+    
+    // זמני מוצאי שבת
+    if (date.getDay() === 6) { // שבת
+        // מוצאי שבת רגיל או חזו"א
+        filteredTimes.shabbatEnd = settings.shabbatEndType === 'regular' ? 
+            dayTimes.shabbatEnd : dayTimes.hazon40;
+        filteredTimes.rtzeit72 = dayTimes.rtzeit72;
+    }
+
+    return filteredTimes;
 }
 
 // קריאת נתונים מקובץ Excel
@@ -1472,7 +1548,7 @@ async function loadTimesData() {
                         console.log(`- הנץ החמה: ${dayTimes.sunrise}`);
                         console.log(`- שקיעה: ${dayTimes.sunset}`);
                         console.log(`- צאת הכוכבים: ${dayTimes.tzeit1}`);
-                        console.log(`- סוף זמן ק"ש גר"א: ${dayTimes.shemaGra}`);
+                        console.log(`- סוף זמן ק"ש (גר"א): ${dayTimes.shemaGra}`);
                     }
                 }
             }
