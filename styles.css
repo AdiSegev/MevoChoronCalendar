@@ -6,7 +6,7 @@
     --border-color: #E9ECEF;
     --hover-color: #2980B9;
     --disabled-color: #808080;
-    --accent-color: #2980B9;
+    --accent-color: #4AA3DF;
     --base-font-size: 16px;
     --font-size-multiplier: 1;
     --theme-color: #2196F3;
@@ -179,20 +179,26 @@ header {
     font-size: calc(var(--base-font-size) * 1.1);
 }
 
-.days {
+#daysGrid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     gap: 1px;
-    background: var(--border-color);
+    background-color: var(--border-color);
+    border: 1px solid var(--border-color);
+    direction: rtl;
 }
 
 #daysGrid .day {
+    position: relative;
+    border: 1px solid var(--border-color);
+    padding: 10px;
     min-height: 80px;
-    padding: 5px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
+    transition: all 0.2s ease;
     background-color: white;
-    z-index: 1;
+}
+
+#daysGrid .day.clickable {
+    cursor: pointer;
 }
 
 #daysGrid .day.outside-month {
@@ -200,11 +206,40 @@ header {
     color: #999;
 }
 
-#daysGrid .day:not(.outside-month):hover {
+#daysGrid .day.current-day:not(.outside-month) {
     background-color: var(--hover-color);
     color: white;
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+#daysGrid .day.current-day:not(.outside-month) .primary-date,
+#daysGrid .day.current-day:not(.outside-month) .secondary-date {
+    color: white;
+}
+
+#daysGrid .day.selected-day {
+    background-color: var(--accent-color);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+#daysGrid .day.selected-day .primary-date,
+#daysGrid .day.selected-day .secondary-date {
+    color: white;
+}
+
+#daysGrid .day:not(.outside-month):hover:not(.current-day):not(.selected-day) {
+    background-color: var(--hover-color);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+#daysGrid .day:not(.outside-month):hover:not(.current-day):not(.selected-day) .primary-date,
+#daysGrid .day:not(.outside-month):hover:not(.current-day):not(.selected-day) .secondary-date {
+    color: white;
 }
 
 .day.has-event::after {
@@ -212,17 +247,10 @@ header {
     position: absolute;
     bottom: 5px;
     right: 5px;
-    width: 6px;
-    height: 6px;
-    background-color: var(--theme-color);
-    border-radius: 50%;
-}
-
-.day.selected-day {
+    width: 8px;
+    height: 8px;
     background-color: var(--primary-color);
-    color: white;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    border-radius: 50%;
 }
 
 .date-container {
@@ -236,20 +264,36 @@ header {
     pointer-events: none;
 }
 
-.gregorian-date {
-    font-size: 1.2em;
+.primary-date {
+    font-size: 1.5em;
     font-weight: bold;
-    pointer-events: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2;
 }
 
-.hebrew-date {
-    font-size: 1em;
-    color: inherit;
-    pointer-events: none;
+.secondary-date {
+    font-size: calc(var(--base-font-size) * 0.7);
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    color: var(--text-color);
+    opacity: 0.8;
+    direction: rtl;
+    text-align: right;
+    line-height: 1;
+    padding: 2px;
+    z-index: 1;
 }
 
-.day.current-day {
-    border: 2px solid var(--primary-color);
+.secondary-date .day-number {
+    order: 1;
+}
+
+.secondary-date .month-name {
+    order: 2;
 }
 
 .event-indicator {
@@ -260,22 +304,6 @@ header {
     height: 8px;
     background-color: var(--primary-color);
     border-radius: 50%;
-}
-
-.primary-date {
-    font-size: 1.5em;
-    font-weight: bold;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-}
-
-.secondary-date {
-    font-size: calc(var(--base-font-size) * 0.85);
-    position: absolute;
-    top: 5px;
-    right: 5px;
 }
 
 .modal {
@@ -582,6 +610,15 @@ header {
     box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
 }
 
+.clickable {
+    transition: color 0.3s ease;
+    cursor: pointer;
+}
+
+.clickable:hover {
+    color: var(--accent-color);
+}
+
 .toast {
     display: none;
     position: fixed;
@@ -593,14 +630,6 @@ header {
     border-radius: 4px;
     z-index: 1000;
     animation: fadeIn 0.3s;
-}
-
-.clickable {
-    transition: color 0.3s ease;
-}
-
-.clickable:hover {
-    color: var(--accent-color);
 }
 
 .year-input-container {

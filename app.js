@@ -704,6 +704,9 @@ function showToast(message, duration = 3000) {
 function renderCalendar() {
     try {
         console.log('Starting renderCalendar');
+        console.log('Current Date:', currentDate);
+        console.log('Selected Date:', selectedDate);
+        console.log('Is Hebrew Display:', isHebrewDisplay);
         
         // יישום הגדרות לפני רינדור הלוח
         applySettings();
@@ -843,23 +846,35 @@ function renderCalendar() {
 }
 
 function clearSelectedDay() {
-    const selectedDay = document.querySelector('.selected-day');
-    if (selectedDay) {
-        selectedDay.classList.remove('selected-day');
+    // מוצא את היום שנבחר כרגע ומסיר ממנו את הסימון
+    const selectedDayElement = document.querySelector('.day.selected-day');
+    if (selectedDayElement) {
+        selectedDayElement.classList.remove('selected-day');
     }
 }
 
 function handleDayClick(dayElement, date) {
+    // הסרת הבחירה הקודמת
     clearSelectedDay();
+    
+    // הוספת סימון לתא הנבחר
     dayElement.classList.add('selected-day');
-    selectedDate = date;
+    
+    // שמירת התאריך הנבחר
+    selectedDate = new Date(date);
+    
+    // הצגת פרטי היום
+    showDayDetails(date);
 }
 
 function goToToday() {
-    selectedDate = null;
-    clearSelectedDay();
+    // נאפס את היום הנבחר
     currentDate = new Date();
-    updateCalendar();
+    selectedDate = currentDate;  // נגדיר את היום הנבחר להיום הנוכחי
+    
+    // נרנדר מחדש את הלוח
+    renderCalendar();
+    
     showToast('עברת להיום');
 }
 
@@ -867,21 +882,61 @@ function createDayElement(date, container, isOutsideMonth) {
     const dayElement = document.createElement('div');
     dayElement.classList.add('day');
     
-    if (isOutsideMonth) {
-        dayElement.classList.add('outside-month');
-        dayElement.style.setProperty('cursor', 'default', 'important');
-        dayElement.setAttribute('style', 'cursor: default !important;');
-    } else {
-        dayElement.style.setProperty('cursor', 'pointer', 'important');
-        dayElement.setAttribute('style', 'cursor: pointer !important;');
+    if (!isOutsideMonth) {
+        dayElement.classList.add('clickable');
     }
+    
+    // הגדרת סגנון הסמן בהתאם לסוג היום
+    dayElement.style.cursor = isOutsideMonth ? 'default' : 'pointer';
     
     // בדיקה אם זה היום הנוכחי
     const today = new Date();
-    if (date.getDate() === today.getDate() &&
+    const isCurrentDay = !isOutsideMonth && 
+        date.getDate() === today.getDate() &&
         date.getMonth() === today.getMonth() &&
-        date.getFullYear() === today.getFullYear()) {
+        date.getFullYear() === today.getFullYear();
+    
+    if (isCurrentDay) {
         dayElement.classList.add('current-day');
+    }
+    
+    if (isOutsideMonth) {
+        dayElement.classList.add('outside-month');
+    } else {
+        dayElement.style.cursor = 'pointer';
+    }
+    
+    const hebDate = new HDate(date);
+    
+    // יצירת תצוגת התאריך
+    if (isHebrewDisplay) {
+        // תאריך לועזי בפינה
+        const gregorianDate = document.createElement('div');
+        gregorianDate.classList.add('secondary-date');
+        const month = date.toLocaleString('he', { month: 'short' });
+        gregorianDate.textContent = `${date.getDate()} ${month}`;
+        dayElement.appendChild(gregorianDate);
+
+        // תאריך עברי במרכז
+        const hebrewDate = document.createElement('div');
+        hebrewDate.classList.add('primary-date');
+        hebrewDate.textContent = numberToHebrewLetters(hebDate.getDate());
+        dayElement.appendChild(hebrewDate);
+    } else {
+        // תאריך עברי בפינה
+        const hebrewDate = document.createElement('div');
+        hebrewDate.classList.add('secondary-date');
+        const monthArray = isLeapYear(hebDate.getFullYear()) ? hebrewMonthOrderLogicLeap : hebrewMonthOrderLogic;
+        const monthIndex = hebDate.getMonth() - 1;  // getMonth() מחזיר 1-13, אנחנו צריכים 0-12
+        const hebrewMonthName = monthArray[monthIndex];
+        hebrewDate.textContent = `${numberToHebrewLetters(hebDate.getDate())} ${hebrewMonthName}`;
+        dayElement.appendChild(hebrewDate);
+
+        // תאריך לועזי במרכז
+        const gregorianDate = document.createElement('div');
+        gregorianDate.classList.add('primary-date');
+        gregorianDate.textContent = date.getDate();
+        dayElement.appendChild(gregorianDate);
     }
     
     // בדיקה אם זה היום שנבחר
@@ -890,21 +945,6 @@ function createDayElement(date, container, isOutsideMonth) {
         date.getMonth() === selectedDate.getMonth() &&
         date.getFullYear() === selectedDate.getFullYear()) {
         dayElement.classList.add('selected-day');
-    }
-
-    const hebDate = new HDate(date);
-    
-    // בדיקה אם יש אירועים ביום זה והאם להציג אותם
-    const settings = loadSettings();
-    if (settings.showEvents) {
-        try {
-            const events = HebrewCalendar.getHolidaysOnDate(hebDate, eventOptions);
-            if (events && events.length > 0) {
-                dayElement.classList.add('has-event');
-            }
-        } catch (error) {
-            console.error('שגיאה בטעינת אירועים:', error);
-        }
     }
     
     // שמירת התאריך כמידע על האלמנט
@@ -920,37 +960,19 @@ function createDayElement(date, container, isOutsideMonth) {
             dayElement.classList.add('selected-day');
             
             // שמירת התאריך הנבחר
-            selectedDate = date;
+            selectedDate = new Date(date);
+            
+            // בדיקה אם זה היום הנוכחי
+            if (isCurrentDay) {
+                dayElement.classList.add('current-day');
+            }
             
             // הצגת פרטי היום
             showDayDetails(date);
         });
-
-        dayElement.addEventListener('mouseover', () => {
-            dayElement.style.setProperty('cursor', 'pointer', 'important');
-        });
     }
 
-    // יצירת תצוגת התאריך
-    const dateContainer = document.createElement('div');
-    dateContainer.classList.add('date-container');
-
-    // תאריך לועזי
-    const gregorianDate = document.createElement('div');
-    gregorianDate.classList.add('gregorian-date');
-    gregorianDate.textContent = date.getDate();
-    dateContainer.appendChild(gregorianDate);
-
-    // תאריך עברי
-    const hebrewDate = document.createElement('div');
-    hebrewDate.classList.add('hebrew-date');
-    hebrewDate.textContent = numberToHebrewLetters(hebDate.getDate());
-    dateContainer.appendChild(hebrewDate);
-
-    dayElement.appendChild(dateContainer);
     container.appendChild(dayElement);
-
-    return dayElement;
 }
 
 // הצגת פרטי היום
@@ -1051,7 +1073,7 @@ function showDayDetails(date) {
 
     modal.classList.add('visible');
 
-    // סגירת המודאל בלחיצה על הרקע
+    // סגירת המודאל בלחיצה מחוץ לה
     modal.onclick = function(event) {
         if (event.target === modal) {
             modal.classList.remove('visible');
@@ -1267,7 +1289,11 @@ function setupEventListeners() {
                 currentHebrewYear = prevYear;  // Update currentHebrewYear
                 
                 // יצירת תאריך בשנה הקודמת, באותו חודש ויום
-                const prevYearDate = new HDate(1, currentHebDate.getMonth(), prevYear);
+                const prevYearDate = new HDate(
+                    currentHebDate.getDate(),
+                    currentHebDate.getMonth(),
+                    prevYear
+                );
                 selectedDate = prevYearDate.greg();
             } else {
                 selectedDate.setFullYear(selectedDate.getFullYear() - 1);
@@ -1285,7 +1311,11 @@ function setupEventListeners() {
                 currentHebrewYear = nextYear;  // Update currentHebrewYear
                 
                 // יצירת תאריך בשנה הבאה, באותו חודש ויום
-                const nextYearDate = new HDate(1, currentHebDate.getMonth(), nextYear);
+                const nextYearDate = new HDate(
+                    currentHebDate.getDate(),
+                    currentHebDate.getMonth(),
+                    nextYear
+                );
                 selectedDate = nextYearDate.greg();
             } else {
                 selectedDate.setFullYear(selectedDate.getFullYear() + 1);
@@ -1297,8 +1327,10 @@ function setupEventListeners() {
     // כפתור היום
     if (todayBtn) {
         todayBtn.addEventListener('click', () => {
-            selectedDate = new Date();
+            currentDate = new Date();
+            selectedDate = currentDate;  // נגדיר את היום הנבחר להיום הנוכחי
             renderCalendar();
+            showToast('עברת להיום');
         });
     }
 
