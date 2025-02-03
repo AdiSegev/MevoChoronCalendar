@@ -100,8 +100,6 @@ header {
     text-align: center;
     padding: 10px;
     border-radius: 6px;
-    cursor: pointer;
-    transition: background-color 0.3s, color 0.3s;
     font-size: 0.9em;
 }
 
@@ -144,7 +142,6 @@ header {
     border: none;
     padding: 8px 16px;
     border-radius: 4px;
-    cursor: pointer;
     font-size: calc(14px * var(--font-size-multiplier));
 }
 
@@ -155,7 +152,6 @@ header {
 .nav-btn {
     background: none;
     border: none;
-    cursor: pointer;
     padding: 0.3em;
     font-size: 0.8em;
     color: var(--primary-color);
@@ -190,15 +186,25 @@ header {
     background: var(--border-color);
 }
 
-.day {
-    position: relative;
+#daysGrid .day {
     min-height: 80px;
     padding: 5px;
     border: 1px solid #ddd;
     border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.3s ease;
     background-color: white;
+    z-index: 1;
+}
+
+#daysGrid .day.outside-month {
+    background-color: #f5f5f5;
+    color: #999;
+}
+
+#daysGrid .day:not(.outside-month):hover {
+    background-color: var(--hover-color);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .day.has-event::after {
@@ -210,13 +216,6 @@ header {
     height: 6px;
     background-color: var(--theme-color);
     border-radius: 50%;
-}
-
-.day:hover {
-    background-color: var(--hover-color);
-    color: white;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .day.selected-day {
@@ -233,21 +232,20 @@ header {
     justify-content: center;
     height: 100%;
     gap: 5px;
+    z-index: 2;
+    pointer-events: none;
 }
 
 .gregorian-date {
     font-size: 1.2em;
     font-weight: bold;
+    pointer-events: none;
 }
 
 .hebrew-date {
     font-size: 1em;
     color: inherit;
-}
-
-.day.outside-month {
-    background-color: #f5f5f5;
-    color: #999;
+    pointer-events: none;
 }
 
 .day.current-day {
@@ -325,7 +323,6 @@ header {
     right: 10px;
     top: 10px;
     font-size: 24px;
-    cursor: pointer;
     color: #666;
     transition: color 0.2s;
 }
@@ -454,8 +451,6 @@ header {
     border-radius: 8px;
     background-color: white;
     font-size: var(--base-font-size);
-    transition: all 0.2s ease;
-    cursor: pointer;
     appearance: none;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
     background-repeat: no-repeat;
@@ -480,8 +475,6 @@ header {
     background-color: var(--border-color);
     border-radius: 1rem;
     position: relative;
-    cursor: pointer;
-    transition: all 0.3s ease;
 }
 
 .setting-item input[type="checkbox"]::before {
@@ -493,7 +486,6 @@ header {
     background-color: white;
     top: 0.2rem;
     left: 0.2rem;
-    transition: transform 0.3s ease;
 }
 
 .setting-item input[type="checkbox"]:checked {
@@ -517,8 +509,6 @@ header {
     border-radius: 8px;
     font-size: calc(var(--base-font-size) * 1.1);
     font-weight: bold;
-    cursor: pointer;
-    transition: all 0.2s ease;
     margin-top: 1rem;
     width: 100%;
 }
@@ -606,7 +596,6 @@ header {
 }
 
 .clickable {
-    cursor: pointer;
     transition: color 0.3s ease;
 }
 
@@ -647,7 +636,6 @@ header {
 .apply-btn, .cancel-btn {
     border: none;
     background: none;
-    cursor: pointer;
     padding: 4px;
     border-radius: 4px;
     font-size: 1.2em;

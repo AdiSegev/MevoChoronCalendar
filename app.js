@@ -869,6 +869,11 @@ function createDayElement(date, container, isOutsideMonth) {
     
     if (isOutsideMonth) {
         dayElement.classList.add('outside-month');
+        dayElement.style.setProperty('cursor', 'default', 'important');
+        dayElement.setAttribute('style', 'cursor: default !important;');
+    } else {
+        dayElement.style.setProperty('cursor', 'pointer', 'important');
+        dayElement.setAttribute('style', 'cursor: pointer !important;');
     }
     
     // בדיקה אם זה היום הנוכחי
@@ -906,19 +911,25 @@ function createDayElement(date, container, isOutsideMonth) {
     dayElement.dataset.date = date.toISOString();
     
     // הוספת אירוע לחיצה
-    dayElement.addEventListener('click', () => {
-        // הסרת הבחירה הקודמת
-        clearSelectedDay();
-        
-        // הוספת סימון לתא הנבחר
-        dayElement.classList.add('selected-day');
-        
-        // שמירת התאריך הנבחר
-        selectedDate = date;
-        
-        // הצגת פרטי היום
-        showDayDetails(date);
-    });
+    if (!isOutsideMonth) {
+        dayElement.addEventListener('click', () => {
+            // הסרת הבחירה הקודמת
+            clearSelectedDay();
+            
+            // הוספת סימון לתא הנבחר
+            dayElement.classList.add('selected-day');
+            
+            // שמירת התאריך הנבחר
+            selectedDate = date;
+            
+            // הצגת פרטי היום
+            showDayDetails(date);
+        });
+
+        dayElement.addEventListener('mouseover', () => {
+            dayElement.style.setProperty('cursor', 'pointer', 'important');
+        });
+    }
 
     // יצירת תצוגת התאריך
     const dateContainer = document.createElement('div');
