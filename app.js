@@ -1061,6 +1061,7 @@ function showDayDetails(date) {
     // זמני מוצאי שבת
     if (date.getDay() === 6) { // שבת
         // מוצאי שבת רגיל או חזו"א
+        filteredTimes.shabbatEnd = dayTimes.shabbatEnd;
         timesContent += `<div>מוצאי שבת: ${filteredTimes.shabbatEnd}</div>`;
         if (filteredTimes.rtzeit72) {
             timesContent += `<div>ר"ת: ${filteredTimes.rtzeit72}</div>`;
@@ -1073,14 +1074,14 @@ function showDayDetails(date) {
 
     modal.classList.add('visible');
 
-    // סגירת המודאל בלחיצה מחוץ לה
+    // סגירת המודל בלחיצה מחוץ לה
     modal.onclick = function(event) {
         if (event.target === modal) {
             modal.classList.remove('visible');
         }
     };
 
-    // סגירת המודאל בלחיצה על כפתור הסגירה
+    // סגירת המודל בלחיצה על כפתור הסגירה
     const closeBtn = modal.querySelector('.close');
     if (closeBtn) {
         closeBtn.onclick = function() {
@@ -1329,7 +1330,10 @@ function setupEventListeners() {
         todayBtn.addEventListener('click', () => {
             currentDate = new Date();
             selectedDate = currentDate;  // נגדיר את היום הנבחר להיום הנוכחי
+    
+            // נרנדר מחדש את הלוח
             renderCalendar();
+    
             showToast('עברת להיום');
         });
     }
@@ -1544,6 +1548,10 @@ function filterTimesBySettings(dayTimes, date) {
         filteredTimes.candlelighting = dayTimes.candlelighting;
     }
     
+    let timesContent = '';
+    timesContent += `<div>שקיעת החמה: ${filteredTimes.sunset}</div>`;
+    timesContent += `<div>צאת הכוכבים: ${filteredTimes.tzeit}</div>`; // Always display tzeit
+
     // זמני מוצאי שבת
     if (date.getDay() === 6) { // שבת
         // מוצאי שבת רגיל או חזו"א
@@ -1605,3 +1613,70 @@ async function loadTimesData() {
 
 // טעינת הנתונים כשהדף נטען
 document.addEventListener('DOMContentLoaded', loadTimesData);
+
+
+
+// מילוי טופס ההגדרות בערכים השמורים
+function populateSettingsForm(form = null) {
+    console.log('Populating settings form...');
+    
+    // אם לא סופק טופס, נסה למצוא אותו
+    if (!form) {
+        form = document.getElementById('settingsForm');
+    }
+    
+    if (!form) {
+        console.error('Settings form not found');
+        return;
+    }
+
+    const settings = loadSettings();
+    console.log('Loaded settings:', settings);
+    
+    // מילוי תיבות בחירה
+    if (form.fontSize) {
+        form.fontSize.value = settings.fontSize;
+        console.log('Set font size to:', settings.fontSize);
+    }
+    if (form.themeColor) {
+        form.themeColor.value = settings.themeColor;
+        console.log('Set theme color to:', settings.themeColor);
+    }
+    if (form.dawnType) {
+        form.dawnType.value = settings.dawnType;
+        console.log('Set dawn type to:', settings.dawnType);
+    }
+    if (form.tzeitType) {
+        form.tzeitType.value = settings.tzeitType;
+        console.log('Set tzeit type to:', settings.tzeitType);
+    }
+    if (form.shabbatEndType) {
+        form.shabbatEndType.value = settings.shabbatEndType;
+        console.log('Set shabbat end type to:', settings.shabbatEndType);
+    }
+    
+    // מילוי תיבת סימון
+    if (form.showEvents) {
+        form.showEvents.checked = settings.showEvents;
+        console.log('Set show events to:', settings.showEvents);
+    }
+}
+
+// הוספת קריאה לפונקציה בעת פתיחת המודל
+function showSettingsModal() {
+    const modal = document.getElementById('settingsModal');
+    populateSettingsForm();
+    modal.classList.add('visible');
+}
+
+// עדכון מאזיני האירועים
+document.addEventListener('DOMContentLoaded', () => {
+    const settingsBtn = document.getElementById('settingsBtn');
+    
+    if (settingsBtn) {
+        settingsBtn.addEventListener('click', showSettingsModal);
+        console.log('Settings button event listener added');
+    } else {
+        console.error('Settings button not found');
+    }
+});
