@@ -908,6 +908,20 @@ function createDayElement(date, container, isOutsideMonth) {
     
     const hebDate = new HDate(date);
     
+    
+    // בדיקה אם יש אירועים ביום זה והאם להציג אותם
+    const settings = loadSettings();
+    if (settings.showEvents) {
+        try {
+            const events = HebrewCalendar.getHolidaysOnDate(hebDate, eventOptions);
+            if (events && events.length > 0) {
+                dayElement.classList.add('has-event');
+            }
+        } catch (error) {
+            console.error('שגיאה בטעינת אירועים:', error);
+        }
+    }
+
     // יצירת תצוגת התאריך
     if (isHebrewDisplay) {
         // תאריך לועזי בפינה
@@ -982,6 +996,12 @@ function showDayDetails(date) {
     const modalEvents = document.getElementById('modalEvents');
     const modalZmanim = document.getElementById('modalZmanim');
 
+    // גלילה לראש המודאל
+    const modalHeader = modal.querySelector('.modal-header');
+    if (modalHeader) {
+        modalHeader.scrollIntoView({ behavior: 'auto', block: 'start' });
+    }
+
     // המרה לתאריך עברי
     const hebDate = new HDate(date);
     const hebrewMonthName = getHebrewMonthName(hebDate.getMonth(), hebDate.getFullYear());
@@ -1025,7 +1045,6 @@ function showDayDetails(date) {
 
     // יצירת תצוגת הזמנים
     let timesContent = '<div class="times-section">';
-    timesContent += '<h3>זמני היום</h3>';
     timesContent += '<div class="time-group">';
 
     // זמני הבוקר
@@ -1369,96 +1388,73 @@ function setupEventListeners() {
     const settingsCloseBtn = settingsModal ? settingsModal.querySelector('.close') : null;
 
     if (settingsBtn && settingsModal && settingsCloseBtn) {
-        settingsBtn.addEventListener('click', () => {
-            // טעינת הגדרות הנוכחיות לטופס
-            const currentSettings = loadSettings();
-            const fontSizeSelect = settingsModal.querySelector('#fontSize');
-            const themeColorSelect = settingsModal.querySelector('#themeColor');
-            const showEventsCheckbox = settingsModal.querySelector('#showEvents');
-            
-            if (fontSizeSelect) fontSizeSelect.value = currentSettings.fontSize;
-            if (themeColorSelect) themeColorSelect.value = currentSettings.themeColor;
-            if (showEventsCheckbox) showEventsCheckbox.checked = currentSettings.showEvents;
-            
-            settingsModal.classList.toggle('visible');
-        });
+        settingsBtn.addEventListener('click', showSettingsModal);
+        console.log('Settings button event listener added');
+    } else {
+        console.error('Settings button not found');
+    }
+}
 
-        // טיפול בשמירת הגדרות
-        const saveSettingsBtn = settingsModal.querySelector('#saveSettings');
-        if (saveSettingsBtn) {
-            saveSettingsBtn.addEventListener('click', () => {
-                const formData = new FormData(settingsModal.querySelector('form'));
-                saveSettings(formData);
-                
-                // החלת ההגדרות
-                applySettings();
-                
-                // סגירת המודאל
-                settingsModal.classList.remove('visible');
-                
-                // הצגת הודעת אישור
-                showToast('ההגדרות נשמרו בהצלחה');
-            });
+function showSettingsModal() {
+    const modal = document.getElementById('settingsModal');
+    
+    // גלילה לראש המודאל
+    const modalHeader = modal.querySelector('.modal-header');
+    if (modalHeader) {
+        modalHeader.scrollIntoView({ behavior: 'auto', block: 'start' });
+    }
+    
+    // טעינת הגדרות הנוכחיות לטופס
+    const currentSettings = loadSettings();
+    const fontSizeSelect = modal.querySelector('#fontSize');
+    const themeColorSelect = modal.querySelector('#themeColor');
+    const showEventsCheckbox = modal.querySelector('#showEvents');
+    
+    if (fontSizeSelect) fontSizeSelect.value = currentSettings.fontSize;
+    if (themeColorSelect) themeColorSelect.value = currentSettings.themeColor;
+    if (showEventsCheckbox) showEventsCheckbox.checked = currentSettings.showEvents;
+    
+    // הצגת המודאל
+    modal.classList.add('visible');
+
+    // סגירת המודאל בלחיצה מחוץ לתחום
+    const closeOnOutsideClick = (event) => {
+        if (event.target === modal) {
+            modal.classList.remove('visible');
+            // הסרת המאזין לאחר הסגירה כדי למנוע דליפת זיכרון
+            modal.removeEventListener('click', closeOnOutsideClick);
         }
+    };
 
-        // סגירת חלון הגדרות בעת לחיצה על כפתור סגירה
+    // הוספת המאזין רק אם טרם נוסף
+    modal.removeEventListener('click', closeOnOutsideClick);
+    modal.addEventListener('click', closeOnOutsideClick);
+}
+
+// עדכון מאזיני האירועים
+document.addEventListener('DOMContentLoaded', () => {
+    const settingsBtn = document.getElementById('settingsBtn');
+    const settingsModal = document.getElementById('settingsModal');
+    const settingsCloseBtn = settingsModal ? settingsModal.querySelector('.close') : null;
+    const settingsForm = document.getElementById('settingsForm');
+
+    if (settingsBtn && settingsModal && settingsCloseBtn) {
+        // הוספת מאזין ללחיצה על כפתור ההגדרות
+        settingsBtn.addEventListener('click', showSettingsModal);
+        console.log('Settings button event listener added');
+
+        // סגירת חלון הגדרות בעת לחיצה על כפתור הסגירה
         settingsCloseBtn.addEventListener('click', () => {
             settingsModal.classList.remove('visible');
         });
-
-        // סגירת חלון הגדרות בעת לחיצה מחוץ לחלון
-        document.addEventListener('click', (event) => {
-            if (settingsModal.classList.contains('visible') && 
-                !settingsModal.contains(event.target) && 
-                event.target !== settingsBtn) {
-                settingsModal.classList.remove('visible');
-            }
-        });
-    }
-
-    // סגירת חלון פרטי היום
-    const dayModal = document.getElementById('dayModal');
-    const dayModalCloseBtn = dayModal ? dayModal.querySelector('.close') : null;
-
-    if (dayModal && dayModalCloseBtn) {
-        dayModalCloseBtn.addEventListener('click', () => {
-            dayModal.classList.remove('visible');
-        });
-    }
-
-    // אישור הזנת שנה
-    const yearValidationBtn = document.getElementById('yearValidationBtn');
-    const yearInput = document.getElementById('yearInput');
-    if (yearValidationBtn && yearInput) {
-        yearValidationBtn.addEventListener('click', () => {
-            const inputYear = yearInput.value;
-            const validatedYear = validateYearInput(inputYear, isHebrewDisplay);
-            
-            if (validatedYear) {
-                // עדכון השנה הנבחרת
-                if (isHebrewDisplay) {
-                    // המרת השנה העברית לתאריך גרגוריאני
-                    const hebDate = new HDate(1, 7, validatedYear);
-                    selectedDate = hebDate.greg();
-                    currentHebrewYear = validatedYear;  // Update currentHebrewYear
-                } else {
-                    selectedDate.setFullYear(validatedYear);
-                }
-                
-                renderCalendar();
-                yearInput.value = ''; // ניקוי שדה הקלט
-                showToast(`השנה עודכנה בהצלחה: ${validatedYear}`);
-            } else {
-                showToast('שנה לא חוקית. אנא הזן שנה תקינה.');
-            }
-        });
+    } else {
+        console.error('Settings button not found');
     }
 
     // טיפול בשמירת הגדרות
-    const settingsForm = document.getElementById('settingsForm');
     if (settingsForm) {
         settingsForm.addEventListener('submit', (event) => {
-            event.preventDefault(); // Prevent form submission
+            event.preventDefault(); // מניעת שליחת טופס
             const formData = new FormData(settingsForm);
             saveSettings(formData);
             
@@ -1472,7 +1468,7 @@ function setupEventListeners() {
             showToast('ההגדרות נשמרו בהצלחה');
         });
     }
-}
+});
 
 // בדיקת מצב אופליין
 window.addEventListener('online', () => {
@@ -1613,70 +1609,3 @@ async function loadTimesData() {
 
 // טעינת הנתונים כשהדף נטען
 document.addEventListener('DOMContentLoaded', loadTimesData);
-
-
-
-// מילוי טופס ההגדרות בערכים השמורים
-function populateSettingsForm(form = null) {
-    console.log('Populating settings form...');
-    
-    // אם לא סופק טופס, נסה למצוא אותו
-    if (!form) {
-        form = document.getElementById('settingsForm');
-    }
-    
-    if (!form) {
-        console.error('Settings form not found');
-        return;
-    }
-
-    const settings = loadSettings();
-    console.log('Loaded settings:', settings);
-    
-    // מילוי תיבות בחירה
-    if (form.fontSize) {
-        form.fontSize.value = settings.fontSize;
-        console.log('Set font size to:', settings.fontSize);
-    }
-    if (form.themeColor) {
-        form.themeColor.value = settings.themeColor;
-        console.log('Set theme color to:', settings.themeColor);
-    }
-    if (form.dawnType) {
-        form.dawnType.value = settings.dawnType;
-        console.log('Set dawn type to:', settings.dawnType);
-    }
-    if (form.tzeitType) {
-        form.tzeitType.value = settings.tzeitType;
-        console.log('Set tzeit type to:', settings.tzeitType);
-    }
-    if (form.shabbatEndType) {
-        form.shabbatEndType.value = settings.shabbatEndType;
-        console.log('Set shabbat end type to:', settings.shabbatEndType);
-    }
-    
-    // מילוי תיבת סימון
-    if (form.showEvents) {
-        form.showEvents.checked = settings.showEvents;
-        console.log('Set show events to:', settings.showEvents);
-    }
-}
-
-// הוספת קריאה לפונקציה בעת פתיחת המודל
-function showSettingsModal() {
-    const modal = document.getElementById('settingsModal');
-    populateSettingsForm();
-    modal.classList.add('visible');
-}
-
-// עדכון מאזיני האירועים
-document.addEventListener('DOMContentLoaded', () => {
-    const settingsBtn = document.getElementById('settingsBtn');
-    
-    if (settingsBtn) {
-        settingsBtn.addEventListener('click', showSettingsModal);
-        console.log('Settings button event listener added');
-    } else {
-        console.error('Settings button not found');
-    }
-});
