@@ -8,6 +8,7 @@
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=David+Libre:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Hebrew&display=swap" rel="stylesheet">
 </head>
 
 <body>
@@ -17,6 +18,7 @@
                 <button id="toggleCalendar" class="control-btn">לועזי עברי</button>
                 <button id="todayBtn" class="control-btn">היום</button>
                 <button id="settingsBtn" class="control-btn">הגדרות</button>
+                <button id="exportBtn" class="control-btn">📥 ייצוא</button>
             </div>
             <div class="month-controls">
                 <div class="year-display">
@@ -56,8 +58,12 @@
         <!-- Modal for day details -->
         <div id="dayModal" class="modal">
             <div class="modal-content">
+                <div class="modal-header">
+                    <h1>זמני היום</h1>
+                    <span class="close">&times;</span>
+                </div>
                 <span class="close">&times;</span>
-                <h3 id="modalDate"></h3>
+                <h2 id="modalDate"></h2>
                 <div id="modalEvents"></div>
                 <div id="modalZmanim"></div>
             </div>
@@ -127,10 +133,25 @@
                             <option value="hazon">חזון איש</option>
                         </select>
                     </div>
-                
 
-            <button type="submit">שמור הגדרות</button>
-            </form>
+
+                    <button type="submit">שמור הגדרות</button>
+                </form>
+            </div>
+        </div>
+        <!-- מודאל יצוא -->
+        <div id="exportModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>ייצוא לוח שנה</h2>
+                    <span class="close">&times;</span>
+                </div>
+                <div class="export-options">
+                    <button id="exportExcelBtn" class="export-btn">
+                        ייצוא ל-Excel
+                    </button>
+                    <button onclick="exportToPDF()" id="exportPdfBtn" style="display: none;">ייצוא PDF</button>
+                </div>
             </div>
         </div>
     </div>
@@ -139,6 +160,11 @@
     <!-- Toast notification -->
     <div id="toast" class="toast"></div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="vfs_fonts.js"></script>
+    <script src="https://unpkg.com/he@1.2.0/he.js"></script>
+    <script src="pdf-export.js"></script>
     <script type="module" src="app.js"></script>
     <script type="module">
         // Register Service Worker
