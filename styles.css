@@ -11,6 +11,9 @@
     --font-size-multiplier: 1;
     --theme-color: #2196F3;
     --user-bg-color: #2c3e50; /* צבע ברירת מחדל */
+    --theme-secondary: #2196F3;
+    --theme-background: #F8F9FA;
+    --theme-accent: #4AA3DF;
 }
 
 * {
@@ -126,10 +129,10 @@ header {
     margin: 0;
     min-width: 120px;
     text-align: center;
+    color: var(--theme-color);
 }
 
 #currentYear {
-    color: var(--primary-color);
     font-size: calc(var(--base-font-size) * 1.2);
 }
 
@@ -152,7 +155,8 @@ header {
 }
 
 .control-btn:hover {
-    opacity: 0.9;
+    background-color: var(--theme-secondary);
+    color: white;
 }
 
 .nav-btn {
@@ -160,12 +164,13 @@ header {
     border: none;
     padding: 0.3em;
     font-size: 0.8em;
-    color: var(--primary-color);
+    color: var(--theme-color);
     transition: color 0.3s ease;
+    cursor: pointer;
 }
 
 .nav-btn:hover {
-    color: var(--accent-color);
+    color: var(--theme-accent);
 }
 
 .calendar-grid {
@@ -213,49 +218,49 @@ header {
 }
 
 #daysGrid .day.current-day:not(.outside-month) {
-    background-color: var(--hover-color);
-    color: white;
+    background-color: var(--theme-color) !important;
+    color: white !important;
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 #daysGrid .day.current-day:not(.outside-month) .primary-date,
 #daysGrid .day.current-day:not(.outside-month) .secondary-date {
-    color: white;
+    color: white !important;
 }
 
 #daysGrid .day.selected-day {
-    background-color: var(--accent-color);
-    color: white;
+    background-color: var(--theme-accent) !important;
+    color: white !important;
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 #daysGrid .day.selected-day .primary-date,
 #daysGrid .day.selected-day .secondary-date {
-    color: white;
+    color: white !important;
 }
 
 #daysGrid .day:not(.outside-month):hover:not(.current-day):not(.selected-day) {
-    background-color: var(--hover-color);
-    color: white;
+    background-color: var(--theme-accent) !important;
+    color: white !important;
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 #daysGrid .day:not(.outside-month):hover:not(.current-day):not(.selected-day) .primary-date,
 #daysGrid .day:not(.outside-month):hover:not(.current-day):not(.selected-day) .secondary-date {
-    color: white;
+    color: white !important;
 }
 
 .day.has-event::after {
-    content: '';
+    content: "";
     position: absolute;
     bottom: 5px;
     right: 5px;
-    width: 8px;
-    height: 8px;
-    background-color: var(--primary-color);
+    width: 6px;
+    height: 6px;
+    background-color: var(--theme-color);
     border-radius: 50%;
 }
 
@@ -335,7 +340,7 @@ header {
 }
 
 .modal-content {
-    background: #ffffff;
+    background: var(--theme-background);
     width: 85%;
     max-width: 500px;
     max-height: 70vh;
@@ -384,7 +389,7 @@ header {
 }
 
 .close:hover {
-    opacity: 1;
+    color: var(--theme-accent);
 }
 
 .settings-group {
@@ -530,7 +535,7 @@ input:checked + .slider:before {
 }
 
 .save-btn:hover {
-    background-color: var(--hover-color);
+    background-color: var(--theme-secondary);
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
@@ -677,7 +682,7 @@ input:checked + .slider:before {
 }
 
 .save-btn:hover {
-    background-color: var(--hover-color);
+    background-color: var(--theme-secondary);
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
@@ -958,24 +963,80 @@ input:checked + .slider:before {
 }
 
 #settingsForm button[type="submit"] {
+    display: block;
     width: 100%;
-    padding: 12px 16px;
+    padding: 12px;
+    margin-top: 20px;
+    border: none;
+    border-radius: 4px;
     background-color: var(--theme-color);
     color: white;
-    border: none;
-    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
     font-size: 1.1rem;
     font-weight: bold;
-    cursor: pointer;
-    transition: background-color 0.3s ease, transform 0.2s;
-    margin-top: 1rem;
 }
 
 #settingsForm button[type="submit"]:hover {
-    background-color: var(--primary-color);
-    transform: scale(1.02);
+    background-color: var(--theme-secondary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 #settingsForm button[type="submit"]:active {
-    transform: scale(0.98);
+    transform: translateY(0);
+}
+
+.export-btn {
+    background-color: var(--theme-color);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin: 10px;
+}
+
+.export-btn:hover {
+    background-color: var(--theme-secondary);
+}
+
+.export-options {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+#modalDate {
+    text-align: center;
+    width: 100%;
+    display: block;
+    margin-bottom: 15px;
+    font-size: 1.2em;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+.control-btn:hover,
+.nav-btn:hover,
+.export-btn:hover,
+.modal-header,
+.settings-group button[type="submit"]:hover {
+    background-color: var(--theme-secondary) !important;
+    color: white;
+}
+
+.modal-content,
+.settings-group button[type="submit"] {
+    background-color: var(--theme-background);
+    border: 1px solid var(--theme-accent);
+}
+
+.settings-group input[type="checkbox"]:checked,
+.settings-group select:focus,
+.modal-header .close:hover {
+    color: var(--theme-accent);
 }

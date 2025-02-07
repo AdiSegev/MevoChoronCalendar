@@ -675,13 +675,9 @@ function applySettings() {
 // אתחול הלוח
 async function initCalendar() {
     try {
-        console.log('Starting initCalendar');
         renderCalendar();
-        console.log('Calendar rendered');
         setupEventListeners();
-        console.log('Event listeners set up');
         applySettings();
-        console.log('Settings applied');
     } catch (error) {
         console.error('Error in initCalendar:', error);
         showToast('שגיאה בטעינת הלוח: ' + error.message);
@@ -690,7 +686,6 @@ async function initCalendar() {
 
 // הצגת הודעת Toast
 function showToast(message, duration = 3000) {
-    console.log('Showing toast:', message);
     const toast = document.getElementById('toast');
     if (!toast) {
         console.error('Toast element not found');
@@ -706,11 +701,6 @@ function showToast(message, duration = 3000) {
 // רינדור הלוח
 function renderCalendar() {
     try {
-        console.log('Starting renderCalendar');
-        console.log('Current Date:', currentDate);
-        console.log('Selected Date:', selectedDate);
-        console.log('Is Hebrew Display:', isHebrewDisplay);
-        
         // יישום הגדרות לפני רינדור הלוח
         applySettings();
         
@@ -728,8 +718,6 @@ function renderCalendar() {
             const selectedHebDate = new HDate(selectedDate);
             const hebMonth = selectedHebDate.getMonth();
             const hebYear = selectedHebDate.getFullYear();
-            
-            console.log('Hebrew Year:', hebYear); // הוספת לוג לבדיקה
             
             // מציאת היום הראשון והאחרון של החודש העברי
             const firstDayOfHebMonth = new HDate(1, hebMonth, hebYear);
@@ -783,7 +771,6 @@ function renderCalendar() {
                 const hebDate = new HDate(selectedDate);
                 const hebMonth = hebDate.getMonth();
                 const hebYear = hebDate.getFullYear();
-                console.log('Hebrew Year (2):', hebYear); // הוספת לוג לבדיקה
                 const monthName = getHebrewMonthName(hebMonth, hebYear);
                 const hebrewYear = numberToHebrewLetters(hebYear);
                 currentMonthElement.textContent = monthName;
@@ -1112,142 +1099,9 @@ function showDayDetails(date) {
     }
 }
 
-// הגדרת מחלקת DayTimes
-class DayTimes {
-    constructor(rowData) {
-        this.rtzeit72 = rowData[0];          // מוצאי שבת ר"ת 72 דק'
-        this.hazon40 = rowData[1];           // מוצאי שבת חזו"א 40 דק'
-        this.shabbatEnd = rowData[2];        // מוצאי שבת
-        this.tzeit1 = rowData[3];            // צאת הכוכבים 1
-        this.tzeit2 = rowData[4];            // צאת הכוכבים 2
-        this.tzeit3 = rowData[5];            // צאת הכוכבים 3
-        this.sunset = rowData[6];            // שקיעת החמה
-        this.candlelighting = rowData[7];    // הדלקת נרות שבת
-        this.plag = rowData[8];              // פלג המנחה
-        this.minchaKetana = rowData[9];      // מנחה קטנה
-        this.minchaGedola = rowData[10];     // מנחה גדולה
-        this.chatzot = rowData[11];          // חצות יום ולילה
-        this.tefilaGra = rowData[12];        // סוף זמן תפילה גר"א
-        this.tefilaMga72 = rowData[13];      // סוף זמן תפילה מג"א 72
-        this.tefilaMga90 = rowData[14];      // סוף זמן תפילה מג"א 90
-        this.shemaGra = rowData[15];         // סוף זמן ק"ש גר"א
-        this.shemaMga72 = rowData[16];       // סוף זמן ק"ש מג"א 72
-        this.shemaMga90 = rowData[17];       // סוף זמן ק"ש מג"א 90
-        this.sunrise = rowData[18];          // הנץ החמה
-        this.talitTefilin = rowData[19];     // זמן ציצית ותפילין
-        this.dawn72 = rowData[20];           // עלות השחר 72 דק'
-        this.dawn90 = rowData[21];           // עלות השחר 90 דק'
-        this.dayOfMonth = rowData[22];       // יום בחודש
-    }
-}
-
-// הגדרת מחלקת TimesManager
-class TimesManager {
-    constructor() {
-        // מפה של כל הנתונים: מפתח = חודש (1-12), ערך = מערך של ימים
-        this.monthsData = new Map();
-    }
-
-    // טעינת הנתונים מקובץ Excel
-    async initialize() {
-        try {
-            const XLSX = await import('https://cdn.sheetjs.com/xlsx-0.19.3/package/xlsx.mjs');
-            const response = await fetch('tables/tables.xlsx');
-            const data = new Uint8Array(await response.arrayBuffer());
-            const workbook = XLSX.read(data, { type: 'array' });
-            
-            // נעבור על כל הגליונות (1-12)
-            for (let month = 1; month <= 12; month++) {
-                const worksheet = workbook.Sheets[month.toString()];
-                if (worksheet) {
-                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
-                        header: 1,
-                        raw: false
-                    });
-                    
-                    // נדלג על שורת הכותרות ונמפה כל שורה לאובייקט DayTimes
-                    const daysData = jsonData.slice(1)
-                        .map(row => new DayTimes(row))
-                        .filter(day => day.dayOfMonth); // נסנן שורות ריקות
-                    
-                    this.monthsData.set(month, daysData);
-                }
-            }
-            
-            console.log('נתוני הזמנים נטענו בהצלחה');
-            return true;
-        } catch (error) {
-            console.error('שגיאה בטעינת קובץ הזמנים:', error);
-            return false;
-        }
-    }
-
-    // קבלת נתוני יום ספציפי
-    getTimesForDate(date) {
-        const month = date.getMonth() + 1;  // getMonth() מחזיר 0-11
-        const day = date.getDate();
-        
-        const monthData = this.monthsData.get(month);
-        if (!monthData) return null;
-        
-        return monthData.find(dayTimes => 
-            parseInt(dayTimes.dayOfMonth) === day
-        );
-    }
-
-    // קבלת כל הנתונים של חודש מסוים
-    getMonthData(month) {
-        return this.monthsData.get(month) || [];
-    }
-}
-
-// הוספת קוד להדפסת נתוני timesManager עם כותרות מקוריות
-document.addEventListener('DOMContentLoaded', async () => {
-    window.timesManager = new TimesManager(); // יצירת המופע כאן
-    await timesManager.initialize();
-    
-    // קבלת הכותרות מהאקסל
-    const XLSX = await import('https://cdn.sheetjs.com/xlsx-0.19.3/package/xlsx.mjs');
-    const response = await fetch('tables/tables.xlsx');
-    const data = new Uint8Array(await response.arrayBuffer());
-    const workbook = XLSX.read(data, { type: 'array' });
-    
-    // נדגים את החודש הראשון
-    const worksheet = workbook.Sheets['1'];
-    let headers = XLSX.utils.sheet_to_json(worksheet, { header: 1 })[0];
-    
-    // תיקון פורמט הכותרות
-    headers = headers.map(header => {
-        if (!header) return '';
-        let text = header.toString();
-        
-        // תיקון פורמט של דקות
-        if (text.includes('דק')) {
-            // מוצאי שבת ר"ת 72 דק' -> מוצאי שבת ר"ת דק' 72
-            text = text.replace(/(\d+)\s*דק'?/, 'דק\' $1');
-        }
-        
-        return text;
-    });
-    
-    window.excelTableHeaders = headers;
-    
-    console.log("כותרות העמודות:", window.excelTableHeaders);
-    
-    // הדפסת נתוני החודש הראשון
-    const january = timesManager.monthsData.get(1);
-    january.forEach((dayTimes, index) => {
-        console.log(`יום ${dayTimes.dayOfMonth}:`);
-        window.excelTableHeaders.forEach((header, colIndex) => {
-            console.log(`${header}: ${Object.values(dayTimes)[colIndex]}`);
-        });
-        console.log('---');
-    });
-});
-
 // מאזיני אירועים
 function setupEventListeners() {
-    console.log('Setting up event listeners');
+    // console.log('Setting up event listeners');
     
     // כפתורי ניווט
     const prevMonthBtn = document.getElementById('prevMonth');
@@ -1421,7 +1275,7 @@ function setupEventListeners() {
 
     if (settingsBtn && settingsModal && settingsCloseBtn) {
         settingsBtn.addEventListener('click', showSettingsModal);
-        console.log('Settings button event listener added');
+        // console.log('Settings button event listener added');
     } else {
         console.error('Settings button not found');
     }
@@ -1473,12 +1327,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (settingsBtn && settingsModal) {
         // הוספת מאזין ללחיצה על כפתור ההגדרות
         settingsBtn.addEventListener('click', showSettingsModal);
-        console.log('Settings button event listener added');
-
-        // סגירת חלון הגדרות בעת לחיצה על כפתור הסגירה
-        settingsCloseBtn.addEventListener('click', () => {
-            settingsModal.classList.remove('visible');
-        });
+        // console.log('Settings button event listener added');
     } else {
         console.error('Settings button not found');
     }
@@ -1531,11 +1380,35 @@ function getFontSizeMultiplier(size) {
 }
 
 function getThemeColor(theme) {
-    switch (theme) {
-        case 'green': return '#4CAF50';
-        case 'orange': return '#FF9800';
-        default: return '#2196F3';
-    }
+    const themeColors = {
+        blue: {
+            primary: '#2196F3',   // Primary Blue
+            secondary: '#1976D2', // Dark Blue
+            accent: '#03A9F4',    // Light Blue
+            background: '#E3F2FD' // Very Light Blue
+        },
+        green: {
+            primary: '#4CAF50',   // Primary Green
+            secondary: '#388E3C', // Dark Green
+            accent: '#8BC34A',    // Light Green
+            background: '#E8F5E9' // Very Light Green
+        },
+        orange: {
+            primary: '#FF9800',   // Primary Orange
+            secondary: '#F57C00', // Dark Orange
+            accent: '#FFC107',    // Amber
+            background: '#FFF3E0' // Very Light Orange
+        }
+    };
+
+    const selectedTheme = themeColors[theme] || themeColors.blue;
+    
+    // עדכון משתני CSS עם צבעים נוספים
+    document.documentElement.style.setProperty('--theme-secondary', selectedTheme.secondary);
+    document.documentElement.style.setProperty('--theme-accent', selectedTheme.accent);
+    document.documentElement.style.setProperty('--theme-background', selectedTheme.background);
+    
+    return selectedTheme.primary;
 }
 
 // סינון זמנים לפי הגדרות המשתמש
@@ -1576,15 +1449,14 @@ function filterTimesBySettings(dayTimes, date) {
         filteredTimes.candlelighting = dayTimes.candlelighting;
     }
     
-    let timesContent = '';
-    timesContent += `<div>שקיעת החמה: ${filteredTimes.sunset}</div>`;
-    timesContent += `<div>צאת הכוכבים: ${filteredTimes.tzeit}</div>`; // Always display tzeit
+    filteredTimes.sunset = dayTimes.sunset;
+    filteredTimes.tzeit = dayTimes.tzeit1; // Always display tzeit1
 
     // זמני מוצאי שבת
     if (date.getDay() === 6) { // שבת
         // מוצאי שבת רגיל או חזו"א
         filteredTimes.shabbatEnd = dayTimes.shabbatEnd;
-        filteredTimes.rtzeit72 = dayTimes.rtzeit72;
+        // filteredTimes.rtzeit72 = dayTimes.rtzeit72;
     }
 
     return filteredTimes;
@@ -1597,10 +1469,10 @@ async function loadTimesData() {
         const response = await fetch('tables/tables.xlsx');
         const data = new Uint8Array(await response.arrayBuffer());
         const workbook = XLSX.read(data, { type: 'array' });
-
-        console.log('=== בדיקת נתונים - השוואה בין שתי השיטות ===');
         
-        // נעבור על כל גיליונות Excel
+        // console.log('=== בדיקת נתונים - השוואה בין שתי השיטות ===');
+        
+        // נעבור על כל הגליונות (1-12)
         for (let month = 1; month <= 12; month++) {
             const worksheet = workbook.Sheets[month.toString()];
             if (worksheet) {
@@ -1614,25 +1486,25 @@ async function loadTimesData() {
                 if (firstDayRow) {
                     // נתונים מהקריאה הישירה
                     const sunrise = firstDayRow[18];
-                    console.log(`\nחודש ${month}:`);
-                    console.log(`קריאה ישירה: זמן זריחה ב-1 לחודש: ${sunrise}`);
+                    // console.log(`\nחודש ${month}:`);
+                    // console.log(`קריאה ישירה: זמן זריחה ב-1 לחודש: ${sunrise}`);
                     
                     // נתונים מה-TimesManager
                     const date = new Date(2025, month - 1, 1);  // שנת 2025 כדוגמה
                     const dayTimes = timesManager.getTimesForDate(date);
                     if (dayTimes) {
-                        console.log(`TimesManager: זמן זריחה ב-1 לחודש: ${dayTimes.sunrise}`);
-                        console.log(`TimesManager: זמני תפילה נוספים ליום זה:`);
-                        console.log(`- הנץ החמה: ${dayTimes.sunrise}`);
-                        console.log(`- שקיעה: ${dayTimes.sunset}`);
-                        console.log(`- צאת הכוכבים: ${dayTimes.tzeit1}`);
-                        console.log(`- סוף זמן ק"ש (גר"א): ${dayTimes.shemaGra}`);
+                        // console.log(`TimesManager: זמן זריחה ב-1 לחודש: ${dayTimes.sunrise}`);
+                        // console.log(`TimesManager: זמני תפילה נוספים ליום זה:`);
+                        // console.log(`- הנץ החמה: ${dayTimes.sunrise}`);
+                        // console.log(`- שקיעה: ${dayTimes.sunset}`);
+                        // console.log(`- צאת הכוכבים: ${dayTimes.tzeit1}`);
+                        // console.log(`- סוף זמן ק"ש (גר"א): ${dayTimes.shemaGra}`);
                     }
                 }
             }
         }
         
-        console.log('\nבדיקת הנתונים הושלמה');
+        // console.log('\nבדיקת הנתונים הושלמה');
     } catch (error) {
         console.error('שגיאה בטעינת קובץ הזמנים:', error);
     }
@@ -1656,31 +1528,31 @@ document.addEventListener('DOMContentLoaded', async () => {
     let headers = XLSX.utils.sheet_to_json(worksheet, { header: 1 })[0];
     
     // תיקון פורמט הכותרות
-    // headers = headers.map(header => {
-    //     if (!header) return '';
-    //     let text = header.toString();
+    headers = headers.map(header => {
+        if (!header) return '';
+        let text = header.toString();
         
-    //     // תיקון פורמט של דקות
-    //     if (text.includes('דק')) {
-    //         // מוצאי שבת ר"ת 72 דק' -> מוצאי שבת ר"ת דק' 72
-    //         text = text.replace(/(\d+)\s*דק'?/, 'דק\' $1');
-    //     }
+        // תיקון פורמט של דקות
+        if (text.includes('דק')) {
+            // מוצאי שבת ר"ת 72 דק' -> מוצאי שבת ר"ת דק' 72
+            text = text.replace(/(\d+)\s*דק'?/, 'דק\' $1');
+        }
         
-    //     return text;
-    // });
+        return text;
+    });
     
     window.excelTableHeaders = headers;
     
-    console.log("כותרות העמודות:", window.excelTableHeaders);
+    // console.log("כותרות העמודות:", window.excelTableHeaders);
     
     // הדפסת נתוני החודש הראשון
     const january = timesManager.monthsData.get(1);
     january.forEach((dayTimes, index) => {
-        console.log(`יום ${dayTimes.dayOfMonth}:`);
-        window.excelTableHeaders.forEach((header, colIndex) => {
-            console.log(`${header}: ${Object.values(dayTimes)[colIndex]}`);
-        });
-        console.log('---');
+        // console.log(`יום ${dayTimes.dayOfMonth}:`);
+        // window.excelTableHeaders.forEach((header, colIndex) => {
+        //     console.log(`${header}: ${Object.values(dayTimes)[colIndex]}`);
+        // });
+        // console.log('---');
     });
 });
 
@@ -1689,65 +1561,52 @@ document.addEventListener('DOMContentLoaded', () => {
     const exportBtn = document.getElementById('exportBtn');
     const exportModal = document.getElementById('exportModal');
     const exportExcelBtn = document.getElementById('exportExcelBtn');
-    const exportPdfBtn = document.getElementById('exportPdfBtn');
     const exportModalClose = exportModal ? exportModal.querySelector('.close') : null;
 
     // פונקציה לטיפול בסגירת מודאל היצוא
-    const closeExportModal = () => {
-        if (exportModal) {
+    const handleExportModalClose = (e) => {
+        if (e.target === exportModal) {
             exportModal.classList.remove('visible');
         }
     };
 
-    // הוספת מאזין לכפתור היצוא
+    // הוספת מאזיני אירועים למודאל היצוא
     if (exportBtn && exportModal) {
         exportBtn.addEventListener('click', () => {
             exportModal.classList.add('visible');
         });
-    }
 
-    // הוספת מאזין לכפתור סגירה
-    if (exportModalClose) {
-        exportModalClose.addEventListener('click', closeExportModal);
+        // סגירה בלחיצה על X
+        if (exportModalClose) {
+            exportModalClose.addEventListener('click', () => {
+                exportModal.classList.remove('visible');
+            });
+        }
+
+        // סגירה בלחיצה מחוץ למודאל
+        exportModal.addEventListener('click', handleExportModalClose);
     }
 
     // יצוא לאקסל
     if (exportExcelBtn) {
         exportExcelBtn.addEventListener('click', async () => {
             try {
+                const XLSX = await import('https://cdn.sheetjs.com/xlsx-0.19.3/package/xlsx.mjs');
                 const response = await fetch('tables/tables.xlsx');
-                const blob = await response.blob();
+                const data = new Uint8Array(await response.arrayBuffer());
+                const workbook = XLSX.read(data, { type: 'array' });
+                const excelData = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+                const blob = new Blob([excelData], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
                 const link = document.createElement('a');
                 link.href = URL.createObjectURL(blob);
                 link.download = 'calendar_tables.xlsx';
                 link.click();
                 URL.revokeObjectURL(link.href);
-                closeExportModal();
+                exportModal.classList.remove('visible');
                 showToast('קובץ Excel ייוצא בהצלחה');
             } catch (error) {
                 console.error('שגיאה בייצוא Excel:', error);
                 showToast('שגיאה בייצוא קובץ Excel');
-            }
-        });
-    }
-
-    // יצוא ל-PDF
-    if (exportPdfBtn) {
-        exportPdfBtn.addEventListener('click', async () => {
-            try {
-                const XLSX = await import('https://cdn.sheetjs.com/xlsx-0.19.3/package/xlsx.mjs');
-
-                const response = await fetch('tables/tables.xlsx');
-                const data = new Uint8Array(await response.arrayBuffer());
-                const workbook = XLSX.read(data, { type: 'array' });
-                
-                exportToPDF(workbook);
-                
-                exportModal.classList.remove('visible');
-                showToast('קובץ PDF ייוצא בהצלחה');
-            } catch (error) {
-                console.error('שגיאה בייצוא PDF:', error);
-                showToast('שגיאה בייצוא קובץ PDF');
             }
         });
     }
