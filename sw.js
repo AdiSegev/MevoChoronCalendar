@@ -1,62 +1,84 @@
 const CACHE_NAME = 'hebcal-v1';
+const BASE_URL = self.location.origin;
+
 const ASSETS = [
     '/',
     '/index.html',
     '/styles.css',
     '/app.js',
-    '/hebcal-core-bundle.min.js',
     '/manifest.json',
     '/icons/icon-192.png',
     '/icons/icon-512.png',
-    'https://fonts.googleapis.com/css2?family=David+Libre:wght@400;700&display=swap'
+    '/tables/tables.xlsx',
+    '/lib/xlsx.full.min.js',
+    '/lib/he.js',
+    '/lib/hebcal-core.min.js'
 ];
 
-// Install event
-self.addEventListener('install', (event) => {
+// התקנת Service Worker
+self.addEventListener('install', event => {
+    console.log('[Service Worker] Installing');
     event.waitUntil(
         caches.open(CACHE_NAME)
-            .then(cache => cache.addAll(ASSETS))
+            .then(cache => {
+                console.log('[Service Worker] Caching assets');
+                return cache.addAll(ASSETS);
+            })
     );
 });
 
-// Activate event
-self.addEventListener('activate', (event) => {
+// הפעלת Service Worker
+self.addEventListener('activate', event => {
+    console.log('[Service Worker] Activating');
     event.waitUntil(
-        caches.keys().then(keys => {
+        caches.keys().then(cacheNames => {
             return Promise.all(
-                keys.filter(key => key !== CACHE_NAME)
-                    .map(key => caches.delete(key))
+                cacheNames
+                    .filter(cacheName => cacheName !== CACHE_NAME)
+                    .map(cacheName => caches.delete(cacheName))
             );
         })
     );
 });
 
-// Fetch event
-self.addEventListener('fetch', (event) => {
+// טיפול בבקשות
+self.addEventListener('fetch', event => {
+    // התעלם מבקשות Vite
+    if (event.request.url.includes('/@vite') || 
+        event.request.url.includes('/node_modules/') ||
+        event.request.url.includes('ws://') ||
+        event.request.url.includes('hmr')) {
+        return;
+    }
+
     event.respondWith(
         caches.match(event.request)
             .then(response => {
                 if (response) {
+                    console.log('[Service Worker] Serving from cache:', event.request.url);
                     return response;
                 }
+
                 return fetch(event.request)
                     .then(response => {
-                        if (!response || response.status !== 200 || response.type !== 'basic') {
+                        if (!response || response.status !== 200) {
+                            console.log(`[Service Worker] Invalid response for: ${event.request.url}`);
                             return response;
                         }
+
                         const responseToCache = response.clone();
                         caches.open(CACHE_NAME)
                             .then(cache => {
+                                console.log('[Service Worker] Cached new resource:', event.request.url);
                                 cache.put(event.request, responseToCache);
                             });
+
                         return response;
+                    })
+                    .catch(error => {
+                        console.error('[Service Worker] Fetch failed:', error);
+                        throw error;
                     });
-            })
-            .catch(() => {
-                // Return offline page or handle offline state
-                return new Response('אין חיבור אינטרנט. מוצגים נתונים ממטמון', {
-                    headers: { 'Content-Type': 'text/plain; charset=utf-8' }
-                });
             })
     );
 });

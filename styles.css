@@ -1040,3 +1040,9 @@ input:checked + .slider:before {
 .modal-header .close:hover {
     color: var(--theme-accent);
 }
+
+.modal-content .hebrew-date,
+.modal-content .gregorian-date {
+    color: var(--theme-color);
+    font-weight: bold;
+}

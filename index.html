@@ -1,16 +1,13 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>לוח שנה עברי-לועזי</title>
-    <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=David+Libre:wght@400;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Hebrew&display=swap" rel="stylesheet">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#ffffff">
 </head>
-
 <body>
     <div class="app-container">
         <header>
@@ -62,7 +59,7 @@
                     <h1>זמני היום</h1>
                     <span class="close">&times;</span>
                 </div>
-                <span class="close">&times;</span>
+                
                 <h2 id="modalDate"></h2>
                 <div id="modalEvents"></div>
                 <div id="modalZmanim"></div>
@@ -159,23 +156,21 @@
     <!-- Toast notification -->
     <div id="toast" class="toast"></div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.5/xlsx.full.min.js"></script>
-    <script src="https://unpkg.com/he@1.2.0/he.js"></script>
-    <script type="module" src="app.js"></script>
-    <script type="module">
-        // Register Service Worker
+    <script src="lib/xlsx.full.min.js"></script>
+    <script src="lib/he.js"></script>
+    <script src="lib/hebcal-core.min.js"></script>
+    <script src="app.js"></script>
+    <script>
+        // רישום Service Worker
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
-                    .then(registration => {
-                        console.log('ServiceWorker registered:', registration);
-                    })
-                    .catch(error => {
-                        console.log('ServiceWorker registration failed:', error);
-                    });
-            });
+            navigator.serviceWorker.register('/sw.js')
+                .then(registration => {
+                    console.log('Service Worker רשום בהצלחה:', registration.scope);
+                })
+                .catch(error => {
+                    console.error('שגיאה ברישום Service Worker:', error);
+                });
         }
     </script>
 </body>
-
 </html>
