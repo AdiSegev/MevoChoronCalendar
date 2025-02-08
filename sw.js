@@ -43,7 +43,7 @@ self.addEventListener('activate', event => {
 
 // טיפול בבקשות
 self.addEventListener('fetch', event => {
-    // התעלם מבקשות Vite
+    // התעלם מבקשות Vite ודברים שאינם נחוצים
     if (event.request.url.includes('/@vite') || 
         event.request.url.includes('/node_modules/') ||
         event.request.url.includes('ws://') ||
@@ -53,32 +53,51 @@ self.addEventListener('fetch', event => {
 
     event.respondWith(
         caches.match(event.request)
-            .then(response => {
-                if (response) {
-                    console.log('[Service Worker] Serving from cache:', event.request.url);
-                    return response;
+            .then(cachedResponse => {
+                // אם יש תגובה בקאש, החזר אותה
+                if (cachedResponse) {
+                    return cachedResponse;
                 }
 
+                // נסה לקבל את המשאב מהרשת
                 return fetch(event.request)
-                    .then(response => {
-                        if (!response || response.status !== 200) {
-                            console.log(`[Service Worker] Invalid response for: ${event.request.url}`);
-                            return response;
+                    .then(networkResponse => {
+                        // וודא שהתגובה תקינה
+                        if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
+                            return networkResponse;
                         }
 
-                        const responseToCache = response.clone();
+                        // שכפל את התגובה לפני השמירה בקאש
+                        const responseToCache = networkResponse.clone();
+                        
+                        // שמור בקאש באופן אסינכרוני
                         caches.open(CACHE_NAME)
                             .then(cache => {
-                                console.log('[Service Worker] Cached new resource:', event.request.url);
                                 cache.put(event.request, responseToCache);
+                            })
+                            .catch(error => {
+                                console.error('שגיאה בשמירת משאב בקאש:', error);
                             });
 
-                        return response;
+                        return networkResponse;
                     })
                     .catch(error => {
-                        console.error('[Service Worker] Fetch failed:', error);
-                        throw error;
-                    });
+                        console.error('כישלון בקבלת משאב:', error);
+                        
+                        // נסה להחזיר דף אינדקס או תגובת שגיאה
+                        return caches.match('/index.html')
+                            .then(fallbackResponse => {
+                                if (fallbackResponse) {
+                                    return fallbackResponse;
+                                }
+                                
+                                // אם אין דף אינדקס בקאש, החזר תגובת שגיאה
+                                return new Response('לא ניתן לטעון את הדף. אנא בדוק את החיבור לאינטרנט.', {
+                                    status: 503,
+                                    statusText: 'Service Unavailable'
+                                });
+                            });
+                    })
             })
     );
 });

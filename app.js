@@ -1038,7 +1038,6 @@ function showDayDetails(date) {
     timesContent += '<div class="time-group">';
 
     // זמני הבוקר
-    filteredTimes.dawn = dayTimes.dawn72;  // Always use dawn72
     timesContent += `<div>עלות השחר: ${filteredTimes.dawn}</div>`;
     timesContent += `<div>זמן טלית ותפילין: ${filteredTimes.talitTefilin}</div>`;  // Always display talitTefilin
     timesContent += `<div>הנץ החמה: ${filteredTimes.sunrise}</div>`;
@@ -1070,11 +1069,11 @@ function showDayDetails(date) {
     // זמני מוצאי שבת
     if (date.getDay() === 6) { // שבת
         // מוצאי שבת רגיל או חזו"א
-        filteredTimes.shabbatEnd = dayTimes.shabbatEnd;
+        
         timesContent += `<div>מוצאי שבת: ${filteredTimes.shabbatEnd}</div>`;
-        if (filteredTimes.rtzeit72) {
-            timesContent += `<div>ר"ת: ${filteredTimes.rtzeit72}</div>`;
-        }
+        
+        timesContent += `<div>מוצאי שבת ר"ת: ${dayTimes.rtzeit72}</div>`;
+        
     }
 
     timesContent += '</div>';
@@ -1517,26 +1516,37 @@ function filterTimesBySettings(dayTimes, date) {
     const settings = loadSettings();
     const filteredTimes = {};
     
-    // עלות השחר
-    filteredTimes.dawn = dayTimes.dawn72;  // Always use dawn72
+    // עלות השחר - בדיקת הגדרה מדויקת
+    filteredTimes.dawn = settings.dawnType === '90' ? dayTimes.dawn90 : dayTimes.dawn72;
     
     // זמני ק"ש ותפילה
-    filteredTimes.shemaGra = dayTimes.shemaGra;  // Always display shemaGra
-    filteredTimes.tefilaGra = dayTimes.tefilaGra;  // Always display tefilaGra
+    filteredTimes.shemaGra = dayTimes.shemaGra;
+    filteredTimes.tefilaGra = dayTimes.tefilaGra;
     
-    // הוספת זמני מג"א בהתאם לסוג עלות השחר
-    if (settings.dawnType === '72') {
-        filteredTimes.shemaMga = dayTimes.shemaMga72;
-        filteredTimes.tefilaMga = dayTimes.tefilaMga72;
-    } else {  // '90'
-        filteredTimes.shemaMga = dayTimes.shemaMga90;
-        filteredTimes.tefilaMga = dayTimes.tefilaMga90;
+    // זמני מג"א
+    filteredTimes.shemaMga = settings.dawnType === '90' ? dayTimes.shemaMga90 : dayTimes.shemaMga72;
+    filteredTimes.tefilaMga = settings.dawnType === '90' ? dayTimes.tefilaMga90 : dayTimes.tefilaMga72;
+    
+    // צאת הכוכבים - בדיקת הגדרה מדויקת
+    switch(settings.tzeitType) {
+        case '22.5':
+            filteredTimes.tzeit = dayTimes.tzeit2;
+            break;
+        case '24':
+            filteredTimes.tzeit = dayTimes.tzeit1;
+            break;
+        default: // '14' או כל ערך אחר
+            filteredTimes.tzeit = dayTimes.tzeit3;
     }
     
-    // צאת הכוכבים
-    filteredTimes.tzeit = dayTimes.tzeit1;  // Always display tzeit1
+    // מוצאי שבת - בדיקת הגדרה מדויקת
+    if (date.getDay() === 6) { // שבת
+        filteredTimes.shabbatEnd = settings.shabbatEndType === 'hazon' 
+            ? dayTimes.hazon40 
+            : dayTimes.shabbatEnd;
+    }
     
-    // זמנים קבועים שתמיד מוצגים
+    // זמנים קבועים
     filteredTimes.sunrise = dayTimes.sunrise;
     filteredTimes.sunset = dayTimes.sunset;
     filteredTimes.chatzot = dayTimes.chatzot;
@@ -1548,16 +1558,6 @@ function filterTimesBySettings(dayTimes, date) {
     // זמני ערב שבת
     if (date.getDay() === 5) { // יום שישי
         filteredTimes.candlelighting = dayTimes.candlelighting;
-    }
-    
-    filteredTimes.sunset = dayTimes.sunset;
-    filteredTimes.tzeit = dayTimes.tzeit1; // Always display tzeit1
-
-    // זמני מוצאי שבת
-    if (date.getDay() === 6) { // שבת
-        // מוצאי שבת רגיל או חזו"א
-        filteredTimes.shabbatEnd = dayTimes.shabbatEnd;
-        // filteredTimes.rtzeit72 = dayTimes.rtzeit72;
     }
 
     return filteredTimes;
