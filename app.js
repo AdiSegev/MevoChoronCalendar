@@ -589,39 +589,55 @@ function getHebrewMonthName(month, year) {
 }
 
 // טעינת הגדרות מהאחסון המקומי
-function loadSettings() {
-    const defaultSettings = {
-        fontSize: 'medium',
-        themeColor: 'blue',
-        showEvents: true,
-        dawnType: '72',           // '72' או '90' דקות
-        tzeitType: '14',          // '14', '22.5', או '24' דקות
-        shabbatEndType: 'regular' // 'regular' או 'hazon'
-    };
+// function loadSettings() {
+//     const defaultSettings = {
+//         fontSize: 'medium',
+//         themeColor: 'blue',
+//         showEvents: true,
+//         dawnType: '72',           // '72' או '90' דקות
+//         tzeitType: '14',          // '14', '22.5', או '24' דקות
+//         shabbatEndType: 'regular' // 'regular' או 'hazon'
+//     };
     
-    try {
-        const savedSettings = localStorage.getItem('settings');
-        return savedSettings ? JSON.parse(savedSettings) : defaultSettings;
-    } catch (error) {
-        console.error('Error loading settings:', error);
-        return defaultSettings;
-    }
-}
+//     try {
+//         const savedSettings = localStorage.getItem('settings');
+//         return savedSettings ? JSON.parse(savedSettings) : defaultSettings;
+//     } catch (error) {
+//         console.error('Error loading settings:', error);
+//         return defaultSettings;
+//     }
+// }
 
 // שמירת הגדרות באחסון המקומי
-function saveSettings(formData) {
-    const settings = {
-        fontSize: formData.get('fontSize'),
-        themeColor: formData.get('themeColor'),
-        showEvents: formData.get('showEvents') === 'on',
-        dawnType: formData.get('dawnType'),
-        tzeitType: formData.get('tzeitType'),
-        shabbatEndType: formData.get('shabbatEndType')
+function saveSettings(input) {
+    // שמירת הגדרות תצוגה בנפרד
+    const displaySettings = {
+        fontSize: input instanceof FormData ? input.get('fontSize') : input.display.fontSize,
+        themeColor: input instanceof FormData ? input.get('themeColor') : input.display.themeColor
+    };
+    
+    localStorage.setItem('display-settings', JSON.stringify(displaySettings));
+    
+    // שמירת שאר ההגדרות כפי שהיה קודם
+    const settings = input instanceof FormData ? {
+        showEvents: input.get('showEvents') === 'on',
+        dawnType: input.get('dawnType'),
+        tzeitType: input.get('tzeitType'),
+        shabbatEndType: input.get('shabbatEndType')
+    } : {
+        showEvents: input.showEvents,
+        dawnType: input.dawnType,
+        tzeitType: input.tzeitType,
+        shabbatEndType: input.shabbatEndType
     };
     
     localStorage.setItem('settings', JSON.stringify(settings));
-    applySettings();
-    renderCalendar(); // הוספת קריאה ל-renderCalendar אחרי שמירת ההגדרות
+    
+    applySettings(); // יש לעדכן את הפונקציה כך שתטפל בהגדרות החדשות
+    renderCalendar();
+    
+    // סגירת מודאל התצוגה
+    hideDisplayModal();
     
     // עדכון מחדש של תצוגת היום הנוכחי אם המודאל פתוח
     const dayModal = document.getElementById('dayModal');
@@ -1313,55 +1329,22 @@ function setupEventListeners() {
 document.addEventListener('DOMContentLoaded', () => {
     setupDisplaySettings();
     applySettings(); // החלת ההגדרות השמורות
-    setupSettingsModalEventListeners(); // הוספת מאזיני אירועים למודאל ההגדרות
     setupDisplayModalEventListeners(); // הוספת מאזיני אירועים למודאל התצוגה
+    setupTimesModalEventListeners();
     setupSidebarEventListeners();
     setupEventListeners();
     initCalendar();
 });
-
-function setupSettingsModalEventListeners() {
-    console.log('setupSettingsModalEventListeners called');
-    const settingsModal = document.getElementById('settingsModal');
-    const settingsForm = document.getElementById('settingsForm');
-    const settingsCloseBtn = settingsModal.querySelector('.close');
-    const settingsSaveBtn = settingsModal.querySelector('.save-btn');
-
-    if (settingsModal && settingsForm && settingsCloseBtn && settingsSaveBtn) {
-        settingsSaveBtn.addEventListener('click', (event) => {
-            event.preventDefault();
-            const formData = new FormData(settingsForm);
-            saveSettings(formData);
-            hideSettingsModal();
-        });
-
-        settingsCloseBtn.addEventListener('click', hideSettingsModal);
-
-        // Close settings modal when clicking outside
-        document.addEventListener('click', (event) => {
-            if (event.target === settingsModal) {
-                hideSettingsModal();
-            }
-        });
-    } else {
-        console.error('One or more settings modal elements not found');
-    }
-}
 
 function setupDisplayModalEventListeners() {
     console.log('setupDisplayModalEventListeners called');
     const displayModal = document.getElementById('displayModal');
     const displayForm = document.getElementById('displaySettingsForm');
     const displayCloseBtn = displayModal.querySelector('.close');
-    const displaySaveBtn = displayModal.querySelector('.save-btn');
+    
 
-    if (displayModal && displayForm && displayCloseBtn && displaySaveBtn) {
-        displaySaveBtn.addEventListener('click', (event) => {
-            event.preventDefault();
-            const formData = new FormData(displayForm);
-            saveSettings(formData);
-            hideDisplayModal();
-        });
+    if (displayModal && displayForm && displayCloseBtn) {
+   
 
         displayCloseBtn.addEventListener('click', hideDisplayModal);
 
@@ -1640,21 +1623,29 @@ function loadSettings() {
         display: {
             fontSize: 'medium',
             themeColor: 'blue'
-        }
+        },
+        dawnType: '72',           // '72' או '90' דקות
+        tzeitType: '14',          // '14', '22.5', או '24' דקות
+        shabbatEndType: 'regular', // 'regular' או 'hazon'
+        showDawn: true,
+        showStars: true,
+        showShabbatEnd: true,
+        autoTimeZone: true,
+        showEvents: true
     };
     
     try {
-        const savedSettings = localStorage.getItem('calendarSettings');
-        if (savedSettings) {
-            const parsed = JSON.parse(savedSettings);
-            return {
-                display: {
-                    ...defaultSettings.display,
-                    ...parsed.display
-                }
-            };
-        }
-        return defaultSettings;
+        const savedDisplaySettings = localStorage.getItem('display-settings');
+        const savedTimesSettings = localStorage.getItem('times-settings');
+        
+        const displaySettings = savedDisplaySettings ? JSON.parse(savedDisplaySettings) : defaultSettings.display;
+        const timesSettings = savedTimesSettings ? JSON.parse(savedTimesSettings) : {};
+        
+        return {
+            display: displaySettings,
+            ...defaultSettings,
+            ...timesSettings
+        };
     } catch (error) {
         console.error('Error loading settings:', error);
         return defaultSettings;
@@ -1662,17 +1653,17 @@ function loadSettings() {
 }
 
 // שמירת הגדרות באחסון המקומי
-function saveSettings(settings) {
-    try {
-        localStorage.setItem('calendarSettings', JSON.stringify(settings));
-        showToast('ההגדרות נשמרו בהצלחה');
-        return true;
-    } catch (error) {
-        console.error('Error saving settings:', error);
-        showToast('Error saving settings', 'error');
-        return false;
-    }
-}
+// function saveSettings(settings) {
+//     try {
+//         localStorage.setItem('calendarSettings', JSON.stringify(settings));
+//         showToast('ההגדרות נשמרו בהצלחה');
+//         return true;
+//     } catch (error) {
+//         console.error('Error saving settings:', error);
+//         showToast('Error saving settings', 'error');
+//         return false;
+//     }
+// }
 
 // החלת ההגדרות על העיצוב
 function applySettings(settings = loadSettings()) {
@@ -1852,5 +1843,102 @@ function closeModal(modal) {
     const overlay = document.getElementById('overlay');
     if (overlay) {
         overlay.classList.remove('active');
+    }
+}
+
+function setupTimesModalEventListeners() {
+    console.log('setupTimesModalEventListeners called');
+    const timesModal = document.getElementById('timesModal');
+    const timesForm = document.getElementById('timesSettingsForm');
+    const timesCloseBtn = timesModal.querySelector('.close');
+    const timesSaveBtn = timesModal.querySelector('.save-button');
+
+    if (timesModal && timesForm && timesCloseBtn && timesSaveBtn) {
+        // טעינת הגדרות זמני היום למודאל
+        const timesSettings = loadTimesSettings();
+        
+        // עדכון ערכי הטופס בהתאם להגדרות השמורות
+        timesForm.querySelector('input[name="autoTimeZone"]').checked = timesSettings.autoTimeZone;
+        timesForm.querySelector('select[name="dawnType"]').value = timesSettings.dawnType;
+        timesForm.querySelector('select[name="tzeitType"]').value = timesSettings.tzeitType;
+        timesForm.querySelector('select[name="shabbatEndType"]').value = timesSettings.shabbatEndType;
+
+        timesSaveBtn.addEventListener('click', (event) => {
+            event.preventDefault();
+            const formData = new FormData(timesForm);
+            saveTimesSettings(formData);
+            hideTimesModal();
+        });
+
+        timesCloseBtn.addEventListener('click', hideTimesModal);
+
+        // Close times modal when clicking outside
+        document.addEventListener('click', (event) => {
+            if (event.target === timesModal) {
+                hideTimesModal();
+            }
+        });
+    } else {
+        console.error('One or more times modal elements not found');
+    }
+}
+
+function saveTimesSettings(input) {
+    // שמירת הגדרות זמני היום
+    const timesSettings = input instanceof FormData ? {
+        autoTimeZone: input.get('autoTimeZone') === 'on',
+        dawnType: input.get('dawnType'),
+        tzeitType: input.get('tzeitType'),
+        shabbatEndType: input.get('shabbatEndType'),
+        showDawn: input.get('showDawn') === 'on',
+        showStars: input.get('showStars') === 'on',
+        showShabbatEnd: input.get('showShabbatEnd') === 'on'
+    } : {
+        autoTimeZone: input.autoTimeZone,
+        dawnType: input.dawnType,
+        tzeitType: input.tzeitType,
+        shabbatEndType: input.shabbatEndType,
+        showDawn: input.showDawn,
+        showStars: input.showStars,
+        showShabbatEnd: input.showShabbatEnd
+    };
+    
+    localStorage.setItem('times-settings', JSON.stringify(timesSettings));
+    
+    applyTimesSettings(); // פונקציה שתחיל את ההגדרות
+    renderCalendar();
+}
+
+function loadTimesSettings() {
+    const defaultTimesSettings = {
+        autoTimeZone: true,
+        dawnType: '72',
+        tzeitType: '14',
+        shabbatEndType: 'regular',
+        showDawn: true,
+        showStars: true,
+        showShabbatEnd: true
+    };
+    
+    try {
+        const savedTimesSettings = localStorage.getItem('times-settings');
+        return savedTimesSettings ? JSON.parse(savedTimesSettings) : defaultTimesSettings;
+    } catch (error) {
+        console.error('Error loading times settings:', error);
+        return defaultTimesSettings;
+    }
+}
+
+function applyTimesSettings(settings = loadTimesSettings()) {
+    // כאן תוסיף לוגיקה להחלת ההגדרות על הלוח שנה
+    console.log('Applying times settings:', settings);
+    // דוגמה: עדכון תצוגת זמנים
+    // document.documentElement.style.setProperty('--dawn-type', settings.dawnType);
+}
+
+function hideTimesModal() {
+    const timesModal = document.getElementById('timesModal');
+    if (timesModal) {
+        timesModal.classList.remove('active');
     }
 }

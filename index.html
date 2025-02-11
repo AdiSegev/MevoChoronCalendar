@@ -231,31 +231,47 @@
                     <span class="close">&times;</span>
                 </div>
                 <div class="modal-body">
-                    <div class="settings-group">
-                        <label class="checkbox-container">
-                            <input type="checkbox" name="autoTimeZone" checked>
-                            <span class="checkmark"></span>
-                            שעון חורף/קיץ אוטומטי
-                        </label>
-                    </div>
-                    <div class="settings-group">
-                        <h3>הצג זמנים</h3>
-                        <label class="checkbox-container">
-                            <input type="checkbox" name="showDawn" checked>
-                            <span class="checkmark"></span>
-                            עלות השחר
-                        </label>
-                        <label class="checkbox-container">
-                            <input type="checkbox" name="showStars" checked>
-                            <span class="checkmark"></span>
-                            צאת הכוכבים
-                        </label>
-                        <label class="checkbox-container">
-                            <input type="checkbox" name="showShabbatEnd" checked>
-                            <span class="checkmark"></span>
-                            מוצאי שבת
-                        </label>
-                    </div>
+                    <form id="timesSettingsForm">
+                        <div class="settings-group">
+                            <label class="checkbox-container">
+                                <input type="checkbox" name="autoTimeZone" checked>
+                                <span class="checkmark"></span>
+                                שעון חורף/קיץ אוטומטי
+                            </label>
+                        </div>
+
+                        <!-- עלות השחר -->
+                        <div class="settings-group">
+                            <h3>עלות השחר</h3>
+                            <select name="dawnType">
+                                <option value="72">72 דקות לפני הנץ</option>
+                                <option value="90">90 דקות לפני הנץ</option>
+                            </select>
+                        </div>
+
+                        <!-- צאת הכוכבים -->
+                        <div class="settings-group">
+                            <h3>צאת הכוכבים</h3>
+                            <select name="tzeitType">
+                                <option value="14">14 דקות אחרי שקיעה</option>
+                                <option value="22.5">22.5 דקות אחרי שקיעה</option>
+                                <option value="24">24 דקות אחרי שקיעה</option>
+                            </select>
+                        </div>
+
+                        <!-- מוצאי שבת -->
+                        <div class="settings-group">
+                            <h3>מוצאי שבת</h3>
+                            <select name="shabbatEndType">
+                                <option value="regular">זמן רגיל</option>
+                                <option value="hazon">חזון איש</option>
+                            </select>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="submit" class="save-button">שמור</button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
