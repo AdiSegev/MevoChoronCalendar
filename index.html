@@ -12,10 +12,13 @@
     <div class="app-container">
         <header>
             <div class="header-controls">
-                <button id="toggleCalendar" class="control-btn">לועזי עברי</button>
-                <button id="todayBtn" class="control-btn">היום</button>
-                <button id="settingsBtn" class="control-btn">הגדרות</button>
-                <button id="exportBtn" class="control-btn">📥 ייצוא</button>
+                <button id="hamburgerBtn" class="hamburger-btn">☰</button>
+                <div class="header-buttons">
+                    <button id="toggleCalendar" class="control-btn">לועזי עברי</button>
+                    <button id="todayBtn" class="control-btn">היום</button>
+                    <button id="settingsBtn" class="control-btn">הגדרות</button>
+                    <button id="exportBtn" class="control-btn">📥 ייצוא</button>
+                </div>
             </div>
             <div class="month-controls">
                 <div class="year-display">
@@ -38,6 +41,43 @@
                 </div>
             </div>
         </header>
+
+        <!-- Sidebar Menu -->
+        <div id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <h2>הגדרות</h2>
+                <button class="close-sidebar">×</button>
+            </div>
+            <nav class="sidebar-nav">
+                <button class="sidebar-item" data-modal="displayModal">
+                    <span class="sidebar-icon">🎨</span>
+                    תצוגה
+                </button>
+                <button class="sidebar-item" data-modal="eventsModal">
+                    <span class="sidebar-icon">📅</span>
+                    אירועים
+                </button>
+                <button class="sidebar-item" data-modal="timesModal">
+                    <span class="sidebar-icon">⏰</span>
+                    זמני היום
+                </button>
+                <button class="sidebar-item" data-modal="halachaModal">
+                    <span class="sidebar-icon">📖</span>
+                    עקרונות הלכתיים
+                </button>
+                <button class="sidebar-item" data-modal="exportModal">
+                    <span class="sidebar-icon">📤</span>
+                    ייצוא
+                </button>
+                <button class="sidebar-item" data-modal="aboutModal">
+                    <span class="sidebar-icon">ℹ️</span>
+                    אודות
+                </button>
+            </nav>
+        </div>
+
+        <!-- Overlay -->
+        <div id="overlay" class="overlay"></div>
 
         <div class="calendar-grid">
             <div class="weekdays">
@@ -63,6 +103,201 @@
                 <h2 id="modalDate"></h2>
                 <div id="modalEvents"></div>
                 <div id="modalZmanim"></div>
+            </div>
+        </div>
+
+        <!-- Display Settings Modal -->
+        <div id="displayModal" class="modal settings-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>הגדרות תצוגה</h2>
+                    <button class="close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="displaySettingsForm">
+                        <div class="settings-group">
+                            <h3>גודל טקסט</h3>
+                            <div class="radio-group">
+                                <label>
+                                    <input type="radio" name="fontSize" value="small">
+                                    <span class="radio-text">קטן</span>
+                                </label>
+                                <label>
+                                    <input type="radio" name="fontSize" value="medium" checked>
+                                    <span class="radio-text">בינוני</span>
+                                </label>
+                                <label>
+                                    <input type="radio" name="fontSize" value="large">
+                                    <span class="radio-text">גדול</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="settings-group">
+                            <h3>צבע נושא</h3>
+                            <div class="color-picker">
+                                <label class="color-option">
+                                    <input type="radio" name="themeColor" value="blue" checked>
+                                    <span class="color-preview blue"></span>
+                                    <span class="color-text">כחול</span>
+                                </label>
+                                <label class="color-option">
+                                    <input type="radio" name="themeColor" value="green">
+                                    <span class="color-preview green"></span>
+                                    <span class="color-text">ירוק</span>
+                                </label>
+                                <label class="color-option">
+                                    <input type="radio" name="themeColor" value="orange">
+                                    <span class="color-preview orange"></span>
+                                    <span class="color-text">כתום</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="settings-actions">
+                            <button type="submit" class="btn btn-primary">שמור</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Events Settings Modal -->
+        <div id="eventsModal" class="modal settings-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>הגדרות אירועים</h2>
+                    <span class="close">&times;</span>
+                </div>
+                <form id="eventsSettingsForm">
+                    <div class="modal-body">
+                        <div class="settings-group">
+                            <h3>חגים</h3>
+                            <label class="checkbox-container">
+                                <input type="checkbox" name="holidays.regular" checked>
+                                <span class="checkmark"></span>
+                                חגים וימים טובים
+                            </label>
+                            <label class="checkbox-container">
+                                <input type="checkbox" name="holidays.modern" checked>
+                                <span class="checkmark"></span>
+                                חגים מודרניים (יום העצמאות, יום השואה וכו')
+                            </label>
+                        </div>
+
+                        <div class="settings-group">
+                            <h3>פרשת שבוע</h3>
+                            <label class="checkbox-container">
+                                <input type="checkbox" name="parasha.show" checked>
+                                <span class="checkmark"></span>
+                                הצג פרשות שבוע
+                            </label>
+                        </div>
+
+                        <div class="settings-group">
+                            <h3>ימים מיוחדים</h3>
+                            <label class="checkbox-container">
+                                <input type="checkbox" name="special.roshChodesh" checked>
+                                <span class="checkmark"></span>
+                                ראשי חודשים
+                            </label>
+                            <label class="checkbox-container">
+                                <input type="checkbox" name="special.fast" checked>
+                                <span class="checkmark"></span>
+                                תעניות
+                            </label>
+                            <label class="checkbox-container">
+                                <input type="checkbox" name="special.omer" checked>
+                                <span class="checkmark"></span>
+                                ספירת העומר
+                            </label>
+                            <label class="checkbox-container">
+                                <input type="checkbox" name="special.specialShabbat" checked>
+                                <span class="checkmark"></span>
+                                שבתות מיוחדות
+                            </label>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="save-button">שמור</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Times Settings Modal -->
+        <div id="timesModal" class="modal settings-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>הגדרות זמני היום</h2>
+                    <span class="close">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div class="settings-group">
+                        <label class="checkbox-container">
+                            <input type="checkbox" name="autoTimeZone" checked>
+                            <span class="checkmark"></span>
+                            שעון חורף/קיץ אוטומטי
+                        </label>
+                    </div>
+                    <div class="settings-group">
+                        <h3>הצג זמנים</h3>
+                        <label class="checkbox-container">
+                            <input type="checkbox" name="showDawn" checked>
+                            <span class="checkmark"></span>
+                            עלות השחר
+                        </label>
+                        <label class="checkbox-container">
+                            <input type="checkbox" name="showStars" checked>
+                            <span class="checkmark"></span>
+                            צאת הכוכבים
+                        </label>
+                        <label class="checkbox-container">
+                            <input type="checkbox" name="showShabbatEnd" checked>
+                            <span class="checkmark"></span>
+                            מוצאי שבת
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Halacha Settings Modal -->
+        <div id="halachaModal" class="modal settings-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>עקרונות הלכתיים</h2>
+                    <span class="close">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div class="settings-group">
+                        <h3>חישוב זמנים</h3>
+                        <p class="halacha-text">
+                            חישוב הזמנים מתבצע על פי שיטת הגר"א, תוך התחשבות בגובה המיקום ובתנאים האטמוספריים.
+                        </p>
+                    </div>
+                    <div class="settings-group">
+                        <h3>דיוק גאוגרפי</h3>
+                        <p class="halacha-text">
+                            הזמנים מחושבים בדיוק של שניות, בהתאם למיקום הגיאוגרפי המדויק של המשתמש.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- About Modal -->
+        <div id="aboutModal" class="modal settings-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>אודות</h2>
+                    <span class="close">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div class="about-info">
+                        <p><strong>תאריך עדכון אחרון:</strong> 09.02.2025</p>
+                        <p><strong>מפתח:</strong> יונתן ישראלי</p>
+                        <p><strong>דוא"ל:</strong> contact@hebcal.com</p>
+                    </div>
+                </div>
             </div>
         </div>
 

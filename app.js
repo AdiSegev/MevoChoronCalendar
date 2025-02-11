@@ -592,8 +592,8 @@ function getHebrewMonthName(month, year) {
 function loadSettings() {
     const defaultSettings = {
         fontSize: 'medium',
-        showEvents: true,
         themeColor: 'blue',
+        showEvents: true,
         dawnType: '72',           // '72' או '90' דקות
         tzeitType: '14',          // '14', '22.5', או '24' דקות
         shabbatEndType: 'regular' // 'regular' או 'hazon'
@@ -612,8 +612,8 @@ function loadSettings() {
 function saveSettings(formData) {
     const settings = {
         fontSize: formData.get('fontSize'),
-        showEvents: formData.get('showEvents') === 'on',
         themeColor: formData.get('themeColor'),
+        showEvents: formData.get('showEvents') === 'on',
         dawnType: formData.get('dawnType'),
         tzeitType: formData.get('tzeitType'),
         shabbatEndType: formData.get('shabbatEndType')
@@ -872,12 +872,12 @@ function createDayElement(date, container, isOutsideMonth) {
     const dayElement = document.createElement('div');
     dayElement.classList.add('day');
     
+    // הגדרת סגנון הסמן בהתאם לסוג היום
+    dayElement.style.cursor = isOutsideMonth ? 'default' : 'pointer';
+    
     if (!isOutsideMonth) {
         dayElement.classList.add('clickable');
     }
-    
-    // הגדרת סגנון הסמן בהתאם לסוג היום
-    dayElement.style.cursor = isOutsideMonth ? 'default' : 'pointer';
     
     // בדיקה אם זה היום הנוכחי
     const today = new Date();
@@ -981,10 +981,16 @@ function createDayElement(date, container, isOutsideMonth) {
 
 // הצגת פרטי היום
 function showDayDetails(date) {
+    console.log('showDayDetails called with date:', date);
     const modal = document.getElementById('dayModal');
     const modalDate = document.getElementById('modalDate');
     const modalEvents = document.getElementById('modalEvents');
     const modalZmanim = document.getElementById('modalZmanim');
+
+    if (!modal || !modalDate || !modalEvents || !modalZmanim) {
+        console.error('אחד מרכיבי המודאל חסר');
+        return;
+    }
 
     // גלילה לראש המודאל
     const modalHeader = modal.querySelector('.modal-header');
@@ -1009,24 +1015,41 @@ function showDayDetails(date) {
         const events = HebrewCalendar.getHolidaysOnDate(hebDate, eventOptions);
         if (events && events.length > 0) {
             modalEvents.innerHTML = `
-                <div class="events-section">
-                    <h3>אירועים</h3>
-                    ${events.map(event => `<div>${event.render('he')}</div>`).join('')}
-                </div>
+                ${events.map(event => `<div class="event-item">${event.render('he')}</div>`).join('')}
             `;
+            // הוספת סגנון לאירועים
+            const currentSettings = loadSettings();
+            const themeColorObj = getThemeColor(currentSettings.display?.themeColor || 'blue');
+            modalEvents.style.backgroundColor = themeColorObj.main;
+            modalEvents.style.color = 'white';
+            modalEvents.style.padding = '15px';  // הוספת מרווח
+            modalEvents.style.borderRadius = '5px';  // הוספת פינות מעוגלות
+            modalEvents.querySelectorAll('.event-item').forEach(item => {
+                item.style.color = 'white';
+                item.style.fontSize = '1.2rem';  // הגדלת גודל הפונט
+                item.style.fontWeight = 'bold';  // הדגשת הטקסט
+                item.style.textAlign = 'center';  // מירכוז הטקסט
+                item.style.marginBottom = '10px';  // מרווח בין אירועים
+            });
         } else {
             modalEvents.innerHTML = '';
+            modalEvents.style.backgroundColor = 'transparent';
+            modalEvents.style.color = 'inherit';
         }
     } catch (error) {
         console.error('שגיאה בטעינת אירועים:', error);
-            modalEvents.innerHTML = '';
-        }
-    
+        modalEvents.innerHTML = '';
+        modalEvents.style.backgroundColor = 'transparent';
+        modalEvents.style.color = 'inherit';
+    }
 
     // קבלת הזמנים ליום הנבחר
+    console.log('Trying to get times for date:', date);
     const dayTimes = timesManager.getTimesForDate(date);
+    console.log('Day times:', dayTimes);
     if (!dayTimes) {
         console.error('לא נמצאו זמנים לתאריך זה');
+        modalZmanim.innerHTML = '<div>לא נמצאו זמנים לתאריך זה</div>';
         return;
     }
 
@@ -1042,7 +1065,7 @@ function showDayDetails(date) {
     timesContent += `<div>זמן טלית ותפילין: ${filteredTimes.talitTefilin}</div>`;  // Always display talitTefilin
     timesContent += `<div>הנץ החמה: ${filteredTimes.sunrise}</div>`;
 
-    // זמני קריאת שמע ותפילה
+    // זמני ק"ש ותפילה
     timesContent += `<div>סוף זמן ק"ש (גר"א): ${filteredTimes.shemaGra}</div>`;
     if (filteredTimes.shemaMga) {
         timesContent += `<div>סוף זמן ק"ש (מג"א): ${filteredTimes.shemaMga}</div>`;
@@ -1080,27 +1103,31 @@ function showDayDetails(date) {
     timesContent += '</div>';
     modalZmanim.innerHTML = timesContent;
 
-    modal.classList.add('visible');
+    // הוספת המחלקה show כדי להציג את המודאל
+    modal.style.display = 'flex';  // שינוי מ-block ל-flex כדי לשמור על מרכוז
+    modal.classList.add('show');
 
-    // סגירת המודל בלחיצה מחוץ לה
+    // סגירת המודל בלחיצה מחוץ לו
     modal.onclick = function(event) {
         if (event.target === modal) {
-            modal.classList.remove('visible');
+            modal.classList.remove('show');
+            modal.style.display = 'none';  // הסתרת המודאל לגמרי
         }
     };
 
     // סגירת המודל בלחיצה על כפתור הסגירה
     const closeBtn = modal.querySelector('.close');
     if (closeBtn) {
-        closeBtn.onclick = function() {
-            modal.classList.remove('visible');
-        };
+        closeBtn.addEventListener('click', () => {
+            modal.classList.remove('show');
+            modal.style.display = 'none';  // הסתרת המודאל לגמרי
+        });
     }
 }
 
 // מאזיני אירועים
 function setupEventListeners() {
-    // console.log('Setting up event listeners');
+    console.log('Setting up event listeners');
     
     // כפתורי ניווט
     const prevMonthBtn = document.getElementById('prevMonth');
@@ -1159,7 +1186,9 @@ function setupEventListeners() {
                 if (hebMonth === 6) { // אם אנחנו באלול
                     nextMonth = 7; // נעבור לתשרי
                     nextYear = hebYear + 1; // של השנה הבאה
-                } else if (HDate.isLeapYear(hebYear) && hebMonth === 12) { // אדר א' בשנה מעוברת
+                }
+                
+                if (HDate.isLeapYear(hebYear) && hebMonth === 12) { // אדר א' בשנה מעוברת
                     nextMonth = 13; // נעבור לאדר ב'
                     nextYear = hebYear;
                 } else if (!HDate.isLeapYear(hebYear) && hebMonth === 12) { // אדר בשנה רגילה
@@ -1274,241 +1303,109 @@ function setupEventListeners() {
 
     if (settingsBtn && settingsModal && settingsCloseBtn) {
         settingsBtn.addEventListener('click', showSettingsModal);
+        settingsCloseBtn.addEventListener('click', hideSettingsModal);
         // console.log('Settings button event listener added');
     } else {
         console.error('Settings button not found');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    setupDisplaySettings();
+    applySettings(); // החלת ההגדרות השמורות
+    setupSettingsModalEventListeners(); // הוספת מאזיני אירועים למודאל ההגדרות
+    setupDisplayModalEventListeners(); // הוספת מאזיני אירועים למודאל התצוגה
+    setupSidebarEventListeners();
+    setupEventListeners();
+    initCalendar();
+});
+
+function setupSettingsModalEventListeners() {
+    console.log('setupSettingsModalEventListeners called');
+    const settingsModal = document.getElementById('settingsModal');
+    const settingsForm = document.getElementById('settingsForm');
+    const settingsCloseBtn = settingsModal.querySelector('.close');
+    const settingsSaveBtn = settingsModal.querySelector('.save-btn');
+
+    if (settingsModal && settingsForm && settingsCloseBtn && settingsSaveBtn) {
+        settingsSaveBtn.addEventListener('click', (event) => {
+            event.preventDefault();
+            const formData = new FormData(settingsForm);
+            saveSettings(formData);
+            hideSettingsModal();
+        });
+
+        settingsCloseBtn.addEventListener('click', hideSettingsModal);
+
+        // Close settings modal when clicking outside
+        document.addEventListener('click', (event) => {
+            if (event.target === settingsModal) {
+                hideSettingsModal();
+            }
+        });
+    } else {
+        console.error('One or more settings modal elements not found');
+    }
+}
+
+function setupDisplayModalEventListeners() {
+    console.log('setupDisplayModalEventListeners called');
+    const displayModal = document.getElementById('displayModal');
+    const displayForm = document.getElementById('displaySettingsForm');
+    const displayCloseBtn = displayModal.querySelector('.close');
+    const displaySaveBtn = displayModal.querySelector('.save-btn');
+
+    if (displayModal && displayForm && displayCloseBtn && displaySaveBtn) {
+        displaySaveBtn.addEventListener('click', (event) => {
+            event.preventDefault();
+            const formData = new FormData(displayForm);
+            saveSettings(formData);
+            hideDisplayModal();
+        });
+
+        displayCloseBtn.addEventListener('click', hideDisplayModal);
+
+        // Close display modal when clicking outside
+        document.addEventListener('click', (event) => {
+            if (event.target === displayModal) {
+                hideDisplayModal();
+            }
+        });
+    } else {
+        console.error('One or more display modal elements not found');
     }
 }
 
 function showSettingsModal() {
-    const modal = document.getElementById('settingsModal');
-    
-    // גלילה לראש המודאל
-    const modalHeader = modal.querySelector('.modal-header');
-    if (modalHeader) {
-        modalHeader.scrollIntoView({ behavior: 'auto', block: 'start' });
+    const settingsModal = document.getElementById('settingsModal');
+    if (settingsModal) {
+        settingsModal.classList.add('active');
     }
-
-    // טעינת הגדרות הנוכחיות לטופס
-    const currentSettings = loadSettings();
-    const fontSizeSelect = modal.querySelector('#fontSize');
-    const themeColorSelect = modal.querySelector('#themeColor');
-    const showEventsCheckbox = modal.querySelector('#showEvents');
-    
-    if (fontSizeSelect) fontSizeSelect.value = currentSettings.fontSize;
-    if (themeColorSelect) themeColorSelect.value = currentSettings.themeColor;
-    if (showEventsCheckbox) showEventsCheckbox.checked = currentSettings.showEvents;
-    
-    // הצגת המודאל
-    modal.classList.add('visible');
-
-    // סגירת המודאל בלחיצה מחוץ לתחום
-    const closeOnOutsideClick = (event) => {
-        if (event.target === modal) {
-            modal.classList.remove('visible');
-            // הסרת המאזין לאחר הסגירה כדי למנוע דליפת זיכרון
-            modal.removeEventListener('click', closeOnOutsideClick);
-        }
-    };
-
-    // הוספת המאזין רק אם טרם נוסף
-    modal.removeEventListener('click', closeOnOutsideClick);
-    modal.addEventListener('click', closeOnOutsideClick);
 }
 
-// עדכון מאזיני האירועים
-document.addEventListener('DOMContentLoaded', () => {
-    const settingsBtn = document.getElementById('settingsBtn');
+function hideSettingsModal() {
     const settingsModal = document.getElementById('settingsModal');
-    const settingsCloseBtn = settingsModal ? settingsModal.querySelector('.close') : null;
-    const settingsForm = document.getElementById('settingsForm');
-
-    if (settingsBtn && settingsModal) {
-        // הוספת מאזין ללחיצה על כפתור ההגדרות
-        settingsBtn.addEventListener('click', showSettingsModal);
-        // console.log('Settings button event listener added');
-    } else {
-        console.error('Settings button not found');
+    if (settingsModal) {
+        settingsModal.classList.remove('active');
     }
+}
 
-    // טיפול בשמירת הגדרות
-    if (settingsForm) {
-        settingsForm.addEventListener('submit', (event) => {
-            event.preventDefault(); // מניעת שליחת טופס
-            const formData = new FormData(settingsForm);
-            saveSettings(formData);
-            
-            // החלת ההגדרות
-            applySettings();
-            
-            // סגירת המודאל
-            settingsModal.classList.remove('visible');
-            
-            // הצגת הודעת אישור
-            showToast('ההגדרות נשמרו בהצלחה');
-        });
+function showDisplayModal() {
+    const displayModal = document.getElementById('displayModal');
+    if (displayModal) {
+        displayModal.classList.add('active');
     }
-});
+}
 
-// בדיקת מצב אופליין
-window.addEventListener('online', () => {
-    showToast('חיבור לאינטרנט זמין');
-});
-
-window.addEventListener('offline', () => {
-    showToast('אין חיבור לאינטרנט');
-});
-
-// אתחול האפליקציה
-document.addEventListener('DOMContentLoaded', () => {
-    initializeCurrentHebrewYear();
-    initCalendar();
-});
+function hideDisplayModal() {
+    const displayModal = document.getElementById('displayModal');
+    if (displayModal) {
+        displayModal.classList.remove('active');
+    }
+}
 
 function convertNumberToHebrewYear(year) {
     return numberToHebrewLetters(year);
-}
-
-// הגדרת מחלקת DayTimes
-class DayTimes {
-    constructor(rowData) {
-        this.rtzeit72 = rowData[0];          // מוצאי שבת ר"ת 72 דק'
-        this.hazon40 = rowData[1];           // מוצאי שבת חזו"א 40 דק'
-        this.shabbatEnd = rowData[2];        // מוצאי שבת
-        this.tzeit1 = rowData[3];            // צאת הכוכבים 1
-        this.tzeit2 = rowData[4];            // צאת הכוכבים 2
-        this.tzeit3 = rowData[5];            // צאת הכוכבים 3
-        this.sunset = rowData[6];            // שקיעת החמה
-        this.candlelighting = rowData[7];    // הדלקת נרות שבת
-        this.plag = rowData[8];              // פלג המנחה
-        this.minchaKetana = rowData[9];      // מנחה קטנה
-        this.minchaGedola = rowData[10];     // מנחה גדולה
-        this.chatzot = rowData[11];          // חצות יום ולילה
-        this.tefilaGra = rowData[12];        // סוף זמן תפילה גר"א
-        this.tefilaMga72 = rowData[13];      // סוף זמן תפילה מג"א 72
-        this.tefilaMga90 = rowData[14];      // סוף זמן תפילה מג"א 90
-        this.shemaGra = rowData[15];         // סוף זמן ק"ש גר"א
-        this.shemaMga72 = rowData[16];       // סוף זמן ק"ש מג"א 72
-        this.shemaMga90 = rowData[17];       // סוף זמן ק"ש מג"א 90
-        this.sunrise = rowData[18];          // הנץ החמה
-        this.talitTefilin = rowData[19];     // זמן ציצית ותפילין
-        this.dawn72 = rowData[20];           // עלות השחר 72 דק'
-        this.dawn90 = rowData[21];           // עלות השחר 90 דק'
-        this.dayOfMonth = rowData[22];       // יום בחודש
-    }
-}
-
-// הגדרת מחלקת TimesManager
-class TimesManager {
-    constructor() {
-        // מפה של כל הנתונים: מפתח = חודש (1-12), ערך = מערך של ימים
-        this.monthsData = new Map();
-    }
-
-    // טעינת הנתונים מקובץ Excel
-    async initialize() {
-        try {
-            const XLSX = await import('https://cdn.sheetjs.com/xlsx-0.19.3/package/xlsx.mjs');
-            const response = await fetch('tables/tables.xlsx');
-            const data = new Uint8Array(await response.arrayBuffer());
-            const workbook = XLSX.read(data, { type: 'array' });
-            
-            // נעבור על כל הגליונות (1-12)
-            for (let month = 1; month <= 12; month++) {
-                const worksheet = workbook.Sheets[month.toString()];
-                if (worksheet) {
-                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
-                        header: 1,
-                        raw: false
-                    });
-                    
-                    // נדלג על שורת הכותרות ונמפה כל שורה לאובייקט DayTimes
-                    const daysData = jsonData.slice(1)
-                        .map(row => new DayTimes(row))
-                        .filter(day => day.dayOfMonth); // נסנן שורות ריקות
-                    
-                    this.monthsData.set(month, daysData);
-                }
-            }
-            
-            console.log('נתוני הזמנים נטענו בהצלחה');
-            return true;
-        } catch (error) {
-            console.error('שגיאה בטעינת קובץ הזמנים:', error);
-            return false;
-        }
-    }
-
-    // קבלת נתוני יום ספציפי
-    getTimesForDate(date) {
-        const month = date.getMonth() + 1;  // getMonth() מחזיר 0-11
-        const day = date.getDate();
-        
-        const monthData = this.monthsData.get(month);
-        if (!monthData) return null;
-        
-        return monthData.find(dayTimes => 
-            parseInt(dayTimes.dayOfMonth) === day
-        );
-    }
-
-    // קבלת כל הנתונים של חודש מסוים
-    getMonthData(month) {
-        return this.monthsData.get(month) || [];
-    }
-}
-
-// אתחול גלובלי של TimesManager
-let timesManager;
-
-// אתחול כאשר הדף נטען
-document.addEventListener('DOMContentLoaded', async () => {
-    timesManager = new TimesManager();
-    await timesManager.initialize();
-    
-    // הוספת הפניה גלובלית
-    window.timesManager = timesManager;
-});
-
-// פונקציות עזר להגדרות
-function getFontSizeMultiplier(size) {
-    switch (size) {
-        case 'small': return '0.8';
-        case 'large': return '1.2';
-        default: return '1';
-    }
-}
-
-function getThemeColor(theme) {
-    const themeColors = {
-        blue: {
-            primary: '#2196F3',   // Primary Blue
-            secondary: '#1976D2', // Dark Blue
-            accent: '#03A9F4',    // Light Blue
-            background: '#E3F2FD' // Very Light Blue
-        },
-        green: {
-            primary: '#4CAF50',   // Primary Green
-            secondary: '#388E3C', // Dark Green
-            accent: '#8BC34A',    // Light Green
-            background: '#E8F5E9' // Very Light Green
-        },
-        orange: {
-            primary: '#FF9800',   // Primary Orange
-            secondary: '#F57C00', // Dark Orange
-            accent: '#FFC107',    // Amber
-            background: '#FFF3E0' // Very Light Orange
-        }
-    };
-
-    const selectedTheme = themeColors[theme] || themeColors.blue;
-    
-    // עדכון משתני CSS עם צבעים נוספים
-    document.documentElement.style.setProperty('--theme-secondary', selectedTheme.secondary);
-    document.documentElement.style.setProperty('--theme-accent', selectedTheme.accent);
-    document.documentElement.style.setProperty('--theme-background', selectedTheme.background);
-    
-    return selectedTheme.primary;
 }
 
 // סינון זמנים לפי הגדרות המשתמש
@@ -1636,39 +1533,324 @@ async function downloadExistingExcel() {
     }
 }
 
-// עדכון מאזין האירועים למודאל היצוא
-document.addEventListener('DOMContentLoaded', () => {
-    const exportBtn = document.getElementById('exportBtn');
-    const exportModal = document.getElementById('exportModal');
-    const exportExcelBtn = document.getElementById('exportExcelBtn');
-    const exportModalClose = exportModal ? exportModal.querySelector('.close') : null;
+// הגדרת מחלקת DayTimes
+class DayTimes {
+    constructor(rowData) {
+        this.rtzeit72 = rowData[0];          // מוצאי שבת ר"ת 72 דק'
+        this.hazon40 = rowData[1];           // מוצאי שבת חזו"א 40 דק'
+        this.shabbatEnd = rowData[2];        // מוצאי שבת
+        this.tzeit1 = rowData[3];            // צאת הכוכבים 1
+        this.tzeit2 = rowData[4];            // צאת הכוכבים 2
+        this.tzeit3 = rowData[5];            // צאת הכוכבים 3
+        this.sunset = rowData[6];            // שקיעת החמה
+        this.candlelighting = rowData[7];    // הדלקת נרות שבת
+        this.plag = rowData[8];              // פלג המנחה
+        this.minchaKetana = rowData[9];      // מנחה קטנה
+        this.minchaGedola = rowData[10];     // מנחה גדולה
+        this.chatzot = rowData[11];          // חצות יום ולילה
+        this.tefilaGra = rowData[12];        // סוף זמן תפילה גר"א
+        this.tefilaMga72 = rowData[13];      // סוף זמן תפילה מג"א 72
+        this.tefilaMga90 = rowData[14];      // סוף זמן תפילה מג"א 90
+        this.shemaGra = rowData[15];         // סוף זמן ק"ש גר"א
+        this.shemaMga72 = rowData[16];       // סוף זמן ק"ש מג"א 72
+        this.shemaMga90 = rowData[17];       // סוף זמן ק"ש מג"א 90
+        this.sunrise = rowData[18];          // הנץ החמה
+        this.talitTefilin = rowData[19];     // זמן ציצית ותפילין
+        this.dawn72 = rowData[20];           // עלות השחר 72 דק'
+        this.dawn90 = rowData[21];           // עלות השחר 90 דק'
+        this.dayOfMonth = rowData[22];       // יום בחודש
+    }
+}
 
-    // פונקציה לטיפול בסגירת מודאל היצוא
-    const handleExportModalClose = (e) => {
-        if (e.target === exportModal) {
-            exportModal.classList.remove('visible');
+// הגדרת מחלקת TimesManager
+class TimesManager {
+    constructor() {
+        // מפה של כל הנתונים: מפתח = חודש (1-12), ערך = מערך של ימים
+        this.monthsData = new Map();
+    }
+
+    // טעינת הנתונים מקובץ Excel
+    async initialize() {
+        try {
+            const XLSX = await import('https://cdn.sheetjs.com/xlsx-0.19.3/package/xlsx.mjs');
+            const response = await fetch('tables/tables.xlsx');
+            const data = new Uint8Array(await response.arrayBuffer());
+            const workbook = XLSX.read(data, { type: 'array' });
+            
+            // נעבור על כל הגליונות (1-12)
+            for (let month = 1; month <= 12; month++) {
+                const worksheet = workbook.Sheets[month.toString()];
+                if (worksheet) {
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
+                        header: 1,
+                        raw: false
+                    });
+                    
+                    // נדלג על שורת הכותרות ונמפה כל שורה לאובייקט DayTimes
+                    const daysData = jsonData.slice(1)
+                        .map(row => new DayTimes(row))
+                        .filter(day => day.dayOfMonth); // נסנן שורות ריקות
+                    
+                    this.monthsData.set(month, daysData);
+                }
+            }
+            
+            console.log('נתוני הזמנים נטענו בהצלחה');
+            return true;
+        } catch (error) {
+            console.error('שגיאה בטעינת קובץ הזמנים:', error);
+            return false;
+        }
+    }
+
+    // קבלת נתוני יום ספציפי
+    getTimesForDate(date) {
+        const month = date.getMonth() + 1;  // getMonth() מחזיר 0-11
+        const day = date.getDate();
+        
+        const monthData = this.monthsData.get(month);
+        if (!monthData) return null;
+        
+        return monthData.find(dayTimes => 
+            parseInt(dayTimes.dayOfMonth) === day
+        );
+    }
+
+    // קבלת כל הנתונים של חודש מסוים
+    getMonthData(month) {
+        return this.monthsData.get(month) || [];
+    }
+}
+
+// אתחול גלובלי של TimesManager
+let timesManager;
+
+// אתחול כאשר הדף נטען
+document.addEventListener('DOMContentLoaded', async () => {
+    timesManager = new TimesManager();
+    await timesManager.initialize();
+    
+    // הוספת הפניה גלובלית
+    window.timesManager = timesManager;
+});
+
+// טעינת הגדרות מהאחסון המקומי
+function loadSettings() {
+    const defaultSettings = {
+        display: {
+            fontSize: 'medium',
+            themeColor: 'blue'
         }
     };
+    
+    try {
+        const savedSettings = localStorage.getItem('calendarSettings');
+        if (savedSettings) {
+            const parsed = JSON.parse(savedSettings);
+            return {
+                display: {
+                    ...defaultSettings.display,
+                    ...parsed.display
+                }
+            };
+        }
+        return defaultSettings;
+    } catch (error) {
+        console.error('Error loading settings:', error);
+        return defaultSettings;
+    }
+}
 
-    // הוספת מאזיני אירועים למודאל היצוא
-    if (exportBtn && exportModal) {
-        exportBtn.addEventListener('click', () => {
-            exportModal.classList.add('visible');
-        });
+// שמירת הגדרות באחסון המקומי
+function saveSettings(settings) {
+    try {
+        localStorage.setItem('calendarSettings', JSON.stringify(settings));
+        showToast('ההגדרות נשמרו בהצלחה');
+        return true;
+    } catch (error) {
+        console.error('Error saving settings:', error);
+        showToast('Error saving settings', 'error');
+        return false;
+    }
+}
 
-        // סגירה בלחיצה על X
-        if (exportModalClose) {
-            exportModalClose.addEventListener('click', () => {
-                exportModal.classList.remove('visible');
+// החלת ההגדרות על העיצוב
+function applySettings(settings = loadSettings()) {
+    const displaySettings = settings.display;
+    
+    if (displaySettings) {
+        // Update font size
+        document.documentElement.style.setProperty(
+            '--font-size-multiplier',
+            getFontSizeMultiplier(displaySettings.fontSize)
+        );
+        
+        // Update theme color
+        const themeColors = getThemeColor(displaySettings.themeColor);
+        document.documentElement.style.setProperty('--theme-color', themeColors.main);
+        document.documentElement.style.setProperty('--theme-secondary', themeColors.secondary);
+    }
+}
+
+// פונקציות עזר להגדרות
+function getFontSizeMultiplier(size) {
+    switch (size) {
+        case 'small': return '0.8';
+        case 'large': return '1.2';
+        default: return '1';
+    }
+}
+
+function getThemeColor(theme) {
+    const themeColors = {
+        blue: {
+            main: '#4a90e2',
+            secondary: '#357abd'
+        },
+        green: {
+            main: '#2ecc71',
+            secondary: '#27ae60'
+        },
+        orange: {
+            main: '#f39c12',
+            secondary: '#d35400'
+        }
+    };
+    
+    return themeColors[theme] || themeColors.blue;
+}
+
+// מאזיני אירועים להגדרות תצוגה
+function setupDisplaySettings() {
+    const displayModal = document.getElementById('displayModal');
+    const displaySettingsForm = document.getElementById('displaySettingsForm');
+
+    if (displaySettingsForm) {
+        // טעינת ההגדרות הנוכחיות
+        const settings = loadSettings();
+        if (settings.display) {
+            // עדכון הטופס עם הערכים השמורים
+            const fontSizeInputs = displaySettingsForm.querySelectorAll('[name="fontSize"]');
+            fontSizeInputs.forEach(input => {
+                input.checked = input.value === settings.display.fontSize;
+            });
+
+            const themeInputs = displaySettingsForm.querySelectorAll('[name="themeColor"]');
+            themeInputs.forEach(input => {
+                input.checked = input.value === settings.display.themeColor;
             });
         }
 
-        // סגירה בלחיצה מחוץ למודאל
-        exportModal.addEventListener('click', handleExportModalClose);
-    }
+        // הוספת מאזין לשמירת הטופס
+        displaySettingsForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const formData = new FormData(displaySettingsForm);
+            
+            const newSettings = {
+                display: {
+                    fontSize: formData.get('fontSize'),
+                    themeColor: formData.get('themeColor')
+                }
+            };
 
-    // יצוא לאקסל
-    if (exportExcelBtn) {
-        exportExcelBtn.addEventListener('click', downloadExistingExcel);
+            if (saveSettings(newSettings)) {
+                applySettings();
+                closeModal(displayModal);
+            }
+        });
+
+        // מאזינים לשינויים בזמן אמת
+        displaySettingsForm.querySelectorAll('input[type="radio"]').forEach(input => {
+            input.addEventListener('change', () => {
+                const formData = new FormData(displaySettingsForm);
+                const previewSettings = {
+                    display: {
+                        fontSize: formData.get('fontSize'),
+                        themeColor: formData.get('themeColor')
+                    }
+                };
+                // תצוגה מקדימה של השינויים
+                applySettings(previewSettings);
+            });
+        });
+
+        // סגירת המודאל בלחיצה מחוץ לאזור המודאל
+        const overlay = document.getElementById('overlay');
+        if (overlay) {
+            overlay.addEventListener('click', (event) => {
+                // בדיקה שהלחיצה הייתה על האוברלי עצמו ולא על תוכן המודאל
+                if (event.target === overlay) {
+                    closeModal(displayModal);
+                }
+            });
+        }
+
+        // סגירת המודאל בלחיצה על כפתור הסגירה (X)
+        const closeButton = displayModal.querySelector('.close');
+        if (closeButton) {
+            closeButton.addEventListener('click', () => {
+                closeModal(displayModal);
+            });
+        }
     }
-});
+}
+
+function setupSidebarEventListeners() {
+    console.log('setupSidebarEventListeners called');
+    const hamburgerBtn = document.getElementById('hamburgerBtn');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('overlay');
+    
+    console.log('hamburgerBtn:', hamburgerBtn);
+    console.log('sidebar:', sidebar);
+    console.log('overlay:', overlay);
+    
+    if (hamburgerBtn && sidebar && overlay) {
+        hamburgerBtn.addEventListener('click', () => {
+            console.log('Hamburger button clicked');
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        });
+
+        overlay.addEventListener('click', () => {
+            sidebar.classList.remove('active');
+            overlay.classList.remove('active');
+        });
+
+        const closeSidebarBtn = sidebar.querySelector('.close-sidebar');
+        if (closeSidebarBtn) {
+            closeSidebarBtn.addEventListener('click', () => {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+            });
+        }
+
+        const sidebarItems = sidebar.querySelectorAll('.sidebar-item');
+        sidebarItems.forEach(item => {
+            item.addEventListener('click', () => {
+                const modalId = item.getAttribute('data-modal');
+                const modal = document.getElementById(modalId);
+                
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+                
+                if (modal) {
+                    modal.classList.add('active');
+                }
+            });
+        });
+    } else {
+        console.error('One or more elements not found');
+    }
+}
+
+function closeModal(modal) {
+    if (modal) {
+        modal.classList.remove('active');
+    }
+    
+    const overlay = document.getElementById('overlay');
+    if (overlay) {
+        overlay.classList.remove('active');
+    }
+}
