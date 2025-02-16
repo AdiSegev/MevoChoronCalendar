@@ -25,6 +25,13 @@ function initializeCurrentHebrewYear() {
     updateCurrentHebrewYear();
 }
 
+// פונקציה לעדכון הגדרות
+function updateSettings(newSettings) {
+    settings = { ...settings, ...newSettings }; // מיזוג ההגדרות החדשות עם הקיימות
+    saveSettings(settings); // שמירת ההגדרות המעודכנות
+    applySettings(settings); // החלת ההגדרות המעודכנות
+}
+
 // הגדרת מיקום ברירת מחדד (ירושלים)
 const defaultLocation = Location.lookup('Jerusalem');
 
@@ -59,7 +66,7 @@ function getLogicMonthIndex(displayName, year) {
 function getMonthNames(year) {
     const months = [];
     const isHebrew = isHebrewDisplay;
-    
+
     if (isHebrew) {
         // Use the display order for the dropdown
         const monthOrder = isLeapYear(year) ? hebrewMonthOrderLeap : hebrewMonthOrder;
@@ -73,7 +80,7 @@ function getMonthNames(year) {
             months.push(monthDate.toLocaleString('he', { month: 'long' }));
         }
     }
-    
+
     return months;
 }
 
@@ -103,7 +110,7 @@ function numberToHebrewLetters(number) {
     }
 
     let result = '';
-    
+
     // טיפול באלפים
     const numThousands = Math.floor(number / 1000);
     if (numThousands > 0) {
@@ -122,7 +129,7 @@ function numberToHebrewLetters(number) {
     if (number > 0) {
         const numTens = Math.floor(number / 10);
         const numUnits = number % 10;
-        
+
         if (numTens > 0) {
             result += tens[numTens];
         }
@@ -140,29 +147,29 @@ function numberToHebrewLetters(number) {
 
 // מיפוי של אותיות עבריות למספרים
 const hebrewAlphabetValues = {
-    'א': 1, 'ב': 2, 'ג': 3, 'ד': 4, 'ה': 5, 
+    'א': 1, 'ב': 2, 'ג': 3, 'ד': 4, 'ה': 5,
     'ו': 6, 'ז': 7, 'ח': 8, 'ט': 9, 'י': 10,
-    'כ': 20, 'ל': 30, 'מ': 40, 'נ': 50, 'ס': 60, 
-    'ע': 70, 'פ': 80, 'צ': 90, 'ק': 100, 'ר': 200, 
+    'כ': 20, 'ל': 30, 'מ': 40, 'נ': 50, 'ס': 60,
+    'ע': 70, 'פ': 80, 'צ': 90, 'ק': 100, 'ר': 200,
     'ש': 300, 'ת': 400
 };
 
 function convertHebrewYearToNumber(hebrewYear) {
     // הסרת רווחים
     hebrewYear = hebrewYear.trim();
-    
+
     // בדיקה אם זו כבר שנה מספרית
     if (/^\d+$/.test(hebrewYear)) {
         const num = parseInt(hebrewYear);
         return num >= 5000 && num <= 6000 ? num : null;
     }
-    
+
     // המרה של שנה עברית לטקסט
     const thousandsMap = {
         'ה': 5000,
         'ו': 6000
     };
-    
+
     // בדיקה עם אלפים
     const thousandsMatch = hebrewYear.match(/^[הו]'/);
     let baseThousand = 5000;
@@ -170,17 +177,17 @@ function convertHebrewYearToNumber(hebrewYear) {
         baseThousand = thousandsMap[thousandsMatch[0][0]];
         hebrewYear = hebrewYear.replace(/^[הו]'/, '');
     }
-    
+
     // תמיכה בהזנה עם וללא גרשיים
     const quotedVersions = [
         hebrewYear.replace(/"/g, ''),  // ללא גרשיים
         hebrewYear                     // עם גרשיים
     ];
-    
+
     for (let version of quotedVersions) {
         let total = 0;
         let validVersion = true;
-        
+
         for (let char of version) {
             if (hebrewAlphabetValues[char] !== undefined) {
                 total += hebrewAlphabetValues[char];
@@ -189,19 +196,19 @@ function convertHebrewYearToNumber(hebrewYear) {
                 break;
             }
         }
-        
+
         if (validVersion && total > 0) {
             return baseThousand + total;
         }
     }
-    
+
     return null;
 }
 
 function hebrewLettersToNumber(str) {
     // הסרת גרשיים וגרש
     str = str.replace(/['"]/g, '');
-    
+
     // טיפול במקרים מיוחדים
     str = str.replace('טו', 'טו');  // 15
     str = str.replace('טז', 'טז');  // 16
@@ -251,20 +258,20 @@ function validateYearInput(input, isHebrewDisplay) {
     if (isHebrewDisplay) {
         // אם הקלט הוא מספר, נמיר אותו למספר
         let year = !isNaN(input) ? parseInt(input) : hebrewLettersToNumber(input);
-        
+
         // בדיקת טווח תקין לשנים עבריות
         return (year >= 5000 && year <= 6000) ? year : null;
     } else {
         // בדיקת טווח תקין לשנים לועזיות
         const year = parseInt(input);
         if (isNaN(year)) return null;
-        
+
         // חישוב הטווח המותר בהתבסס על השנים העבריות
         const minHebrewYear = 5000;
         const maxHebrewYear = 6000;
         const minGregorianYear = new HDate(1, 1, minHebrewYear).greg().getFullYear();
         const maxGregorianYear = new HDate(1, 1, maxHebrewYear).greg().getFullYear();
-        
+
         return (year >= minGregorianYear && year <= maxGregorianYear) ? year : null;
     }
 }
@@ -273,7 +280,7 @@ function calculateHebrewYearBoundaries() {
     // חישוב גבולות האלף החמישי בתאריך הלועזי
     const startOfFifthMillennium = new HDate(1, 1, 5000).greg();
     const endOfFifthMillennium = new HDate(1, 1, 6000).greg();
-    
+
     return {
         minGregorianYear: startOfFifthMillennium.getFullYear(),
         maxGregorianYear: endOfFifthMillennium.getFullYear()
@@ -284,7 +291,7 @@ function setupYearInput() {
     const yearDisplay = document.getElementById('currentYear');
     const yearInput = document.getElementById('yearInput');
     const yearContainer = document.querySelector('.year-input-container');
-    
+
     // בדיקה שכל האלמנטים קיימים
     if (!yearDisplay || !yearInput || !yearContainer) {
         console.error('One or more year input elements are missing');
@@ -301,8 +308,8 @@ function setupYearInput() {
     }
 
     yearDisplay.addEventListener('click', () => {
-        yearInput.value = isHebrewDisplay ? 
-            convertNumberToHebrewYear(new HDate(selectedDate).getFullYear()) : 
+        yearInput.value = isHebrewDisplay ?
+            convertNumberToHebrewYear(new HDate(selectedDate).getFullYear()) :
             selectedDate.getFullYear();
         yearContainer.classList.remove('hidden');
         yearInput.focus();
@@ -310,7 +317,7 @@ function setupYearInput() {
 
     applyBtn.addEventListener('click', () => {
         const validatedYear = validateYearInput(yearInput.value, isHebrewDisplay);
-        
+
         if (validatedYear !== null) {
             if (isHebrewDisplay) {
                 const currentHebDate = new HDate(selectedDate);
@@ -327,8 +334,8 @@ function setupYearInput() {
             renderCalendar();
             yearContainer.classList.add('hidden');
         } else {
-            const errorMessage = isHebrewDisplay 
-                ? 'נא להזין שנה עברית תקינה בין 5000 ל-6000' 
+            const errorMessage = isHebrewDisplay
+                ? 'נא להזין שנה עברית תקינה בין 5000 ל-6000'
                 : 'נא להזין שנה לועזית תקינה';
             showToast(errorMessage);
         }
@@ -343,7 +350,7 @@ function setupYearInput() {
         if (event.key === 'Enter') {
             event.preventDefault(); // Prevent form submission
             const validatedYear = validateYearInput(yearInput.value, isHebrewDisplay);
-        
+
             if (validatedYear !== null) {
                 if (isHebrewDisplay) {
                     const currentHebDate = new HDate(selectedDate);
@@ -360,8 +367,8 @@ function setupYearInput() {
                 renderCalendar();
                 yearContainer.classList.add('hidden');
             } else {
-                const errorMessage = isHebrewDisplay 
-                    ? 'נא להזין שנה עברית תקינה בין 5000 ל-6000' 
+                const errorMessage = isHebrewDisplay
+                    ? 'נא להזין שנה עברית תקינה בין 5000 ל-6000'
                     : 'נא להזין שנה לועזית תקינה';
                 showToast(errorMessage);
             }
@@ -370,8 +377,8 @@ function setupYearInput() {
 
     // סגירת תיבת הקלט בלחיצה מחוץ לה
     document.addEventListener('click', (e) => {
-        if (!yearContainer.contains(e.target) && 
-            !yearDisplay.contains(e.target) && 
+        if (!yearContainer.contains(e.target) &&
+            !yearDisplay.contains(e.target) &&
             !yearContainer.classList.contains('hidden')) {
             yearContainer.classList.add('hidden');
         }
@@ -381,38 +388,38 @@ function setupYearInput() {
 function setupMonthSelect() {
     const currentMonthElement = document.getElementById('currentMonth');
     const monthNavigationContainer = document.querySelector('.month-navigation');
-    
+
     // Create dropdown container
     const monthDropdownContainer = document.createElement('div');
     monthDropdownContainer.classList.add('month-dropdown-container', 'hidden');
-    
+
     // Create dropdown
     const monthDropdown = document.createElement('div');
     monthDropdown.classList.add('month-dropdown');
-    
+
     // Predefined order of Hebrew months
     const hebrewMonthOrder = [
-        'תשרי', 'חשוון', 'כסלו', 'טבת', 'שבט', 
+        'תשרי', 'חשוון', 'כסלו', 'טבת', 'שבט',
         'אדר', 'ניסן', 'אייר', 'סיוון', 'תמוז', 'אב', 'אלול'
     ];
-    
+
     // Predefined order of Hebrew months in leap years
     const hebrewMonthOrderLeap = [
-        'תשרי', 'חשוון', 'כסלו', 'טבת', 'שבט', 
+        'תשרי', 'חשוון', 'כסלו', 'טבת', 'שבט',
         'אדר א\'', 'אדר ב\'', 'ניסן', 'אייר', 'סיוון', 'תמוז', 'אב', 'אלול'
     ];
-    
+
     // Function to get month names based on display mode
     function getMonthNames(year) {
         const months = [];
         const isHebrew = isHebrewDisplay;
-        
+
         if (isHebrew) {
             // Hebrew months with special handling for leap years
             const isLeap = isLeapYear(year);
-            
+
             const monthsToUse = isLeap ? hebrewMonthOrderLeap : hebrewMonthOrder;
-            
+
             monthsToUse.forEach(monthName => {
                 months.push(monthName);
             });
@@ -423,21 +430,21 @@ function setupMonthSelect() {
                 months.push(monthDate.toLocaleString('he', { month: 'long' }));
             }
         }
-        
+
         return months;
     }
-    
+
     // Function to create dropdown
     function createMonthDropdown() {
         // Clear previous dropdown
         monthDropdown.innerHTML = '';
-        
-        const year = isHebrewDisplay 
-            ? new HDate(selectedDate).getFullYear() 
+
+        const year = isHebrewDisplay
+            ? new HDate(selectedDate).getFullYear()
             : selectedDate.getFullYear();
-        
+
         const monthNames = getMonthNames(year);
-        
+
         // Determine the current month name
         let currentMonthName;
         if (isHebrewDisplay) {
@@ -447,17 +454,17 @@ function setupMonthSelect() {
         } else {
             currentMonthName = selectedDate.toLocaleString('he', { month: 'long' });
         }
-        
+
         monthNames.forEach((monthName, index) => {
             const monthItem = document.createElement('div');
             monthItem.classList.add('month-dropdown-item');
             monthItem.textContent = monthName;
-            
+
             // Highlight the current month
             if (monthName === currentMonthName) {
                 monthItem.classList.add('current-month');
             }
-            
+
             // Map month name to correct index for Hebrew and Gregorian calendars
             monthItem.addEventListener('click', () => {
                 // Update selected date to the first day of the selected month
@@ -470,36 +477,36 @@ function setupMonthSelect() {
                     // Gregorian is straightforward
                     selectedDate = new Date(year, index, 1);
                 }
-                
+
                 // Update current month display
                 currentMonthElement.textContent = monthName;
-                
+
                 renderCalendar();
                 toggleMonthDropdown(); // Close dropdown after selection
             });
-            
+
             monthDropdown.appendChild(monthItem);
         });
-        
+
         monthDropdownContainer.appendChild(monthDropdown);
         monthNavigationContainer.appendChild(monthDropdownContainer);
     }
-    
+
     // Function to toggle month dropdown
     function toggleMonthDropdown() {
         monthDropdownContainer.classList.toggle('hidden');
         currentMonthElement.classList.toggle('active');
     }
-    
+
     // Add click event to current month element
     currentMonthElement.addEventListener('click', () => {
         createMonthDropdown();
         toggleMonthDropdown();
     });
-    
+
     // Close dropdown when clicking outside
     document.addEventListener('click', (event) => {
-        if (!monthNavigationContainer.contains(event.target) && 
+        if (!monthNavigationContainer.contains(event.target) &&
             !monthDropdownContainer.classList.contains('hidden')) {
             toggleMonthDropdown();
         }
@@ -531,11 +538,11 @@ function getAdjustedMonthIndex(month, year) {
 function getNextMonth(month, year) {
     // בדיקה האם השנה מעוברת
     const isLeap = isLeapYear(year);
-    
+
     if (month === 14) { // אלול
         return 1; // תשרי של השנה הבאה
     }
-    
+
     if (isLeap) {
         // בשנה מעוברת
         if (month === 12) { // אדר א'
@@ -558,11 +565,11 @@ function getNextMonth(month, year) {
 function getPrevMonth(month, year) {
     // בדיקה האם השנה מעוברת
     const isLeap = isLeapYear(year);
-    
+
     if (month === 1) { // תשרי
         return 14; // אלול של השנה הקודמת
     }
-    
+
     if (isLeap) {
         // בשנה מעוברת
         if (month === 13) { // אדר ב'
@@ -598,7 +605,7 @@ function getHebrewMonthName(month, year) {
 //         tzeitType: '14',          // '14', '22.5', או '24' דקות
 //         shabbatEndType: 'regular' // 'regular' או 'hazon'
 //     };
-    
+
 //     try {
 //         const savedSettings = localStorage.getItem('settings');
 //         return savedSettings ? JSON.parse(savedSettings) : defaultSettings;
@@ -610,50 +617,63 @@ function getHebrewMonthName(month, year) {
 
 // שמירת הגדרות באחסון המקומי
 function saveSettings(input) {
-    // שמירת הגדרות תצוגה בנפרד
-    const displaySettings = {
-        fontSize: input instanceof FormData ? input.get('fontSize') : input.display.fontSize,
-        themeColor: input instanceof FormData ? input.get('themeColor') : input.display.themeColor
-    };
+        // שמירת הגדרות תצוגה בנפרד
+        const displaySettings = {
+            fontSize: input instanceof FormData ? input.get('fontSize') : input.display.fontSize,
+            themeColor: input instanceof FormData ? input.get('themeColor') : input.display.themeColor
+        };
     
-    localStorage.setItem('display-settings', JSON.stringify(displaySettings));
+        localStorage.setItem('display-settings', JSON.stringify(displaySettings));
     
-    // שמירת שאר ההגדרות כפי שהיה קודם
-    const settings = input instanceof FormData ? {
-        showEvents: input.get('showEvents') === 'on',
-        dawnType: input.get('dawnType'),
-        tzeitType: input.get('tzeitType'),
-        shabbatEndType: input.get('shabbatEndType')
-    } : {
-        showEvents: input.showEvents,
-        dawnType: input.dawnType,
-        tzeitType: input.tzeitType,
-        shabbatEndType: input.shabbatEndType
-    };
+        // שמירת הגדרות קטגוריות האירועים
+        const eventCategoriesSettings = input instanceof FormData ? {
+            holidays: input.get('eventCategories.holidays') === 'on',
+            weeklyPortion: input.get('eventCategories.weeklyPortion') === 'on',
+            specialDays: input.get('eventCategories.specialDays') === 'on'
+        } : input.eventCategories || {
+            holidays: true,
+            weeklyPortion: true,
+            specialDays: true
+        };
     
-    localStorage.setItem('settings', JSON.stringify(settings));
+        localStorage.setItem('event-categories-settings', JSON.stringify(eventCategoriesSettings));
     
-    applySettings(); // יש לעדכן את הפונקציה כך שתטפל בהגדרות החדשות
-    renderCalendar();
+        // שמירת שאר ההגדרות כפי שהיה קודם
+        const settings = input instanceof FormData ? {
+            showEvents: input.get('showEvents') === 'on',
+            dawnType: input.get('dawnType'),
+            tzeitType: input.get('tzeitType'),
+            shabbatEndType: input.get('shabbatEndType')
+        } : {
+            showEvents: input.showEvents,
+            dawnType: input.dawnType,
+            tzeitType: input.tzeitType,
+            shabbatEndType: input.shabbatEndType
+        };
     
-    // סגירת מודאל התצוגה
-    hideDisplayModal();
+        localStorage.setItem('settings', JSON.stringify(settings));
     
-    // עדכון מחדש של תצוגת היום הנוכחי אם המודאל פתוח
-    const dayModal = document.getElementById('dayModal');
-    if (dayModal && dayModal.style.display === 'block') {
-        const selectedDay = document.querySelector('.selected-day');
-        if (selectedDay) {
-            const date = new Date(selectedDay.dataset.date);
-            showDayDetails(date);
+        applySettings(); // יש לעדכן את הפונקציה כך שתטפל בהגדרות החדשות
+        renderCalendar();
+    
+        // סגירת מודאל התצוגה
+        hideDisplayModal();
+    
+        // עדכון מחדש של תצוגת היום הנוכחי אם המודאל פתוח
+        const dayModal = document.getElementById('dayModal');
+        if (dayModal && dayModal.style.display === 'block') {
+            const selectedDay = document.querySelector('.selected-day');
+            if (selectedDay) {
+                const date = new Date(selectedDay.dataset.date);
+                showDayDetails(date);
+            }
         }
     }
-}
 
 // החלת ההגדרות על העיצוב
 function applySettings() {
     const settings = loadSettings();
-    
+
     // עדכון הטופס עם הערכים השמורים
     const form = document.getElementById('settingsForm');
     if (form) {
@@ -667,10 +687,10 @@ function applySettings() {
 
     // החלת גודל הטקסט
     document.documentElement.style.setProperty('--font-size-multiplier', getFontSizeMultiplier(settings.fontSize));
-    
+
     // החלת צבע הנושא
     document.documentElement.style.setProperty('--theme-color', getThemeColor(settings.themeColor));
-    
+
     // עדכון תצוגת האירועים
     const calendarDays = document.querySelectorAll('.day');
     calendarDays.forEach(day => {
@@ -719,40 +739,40 @@ function renderCalendar() {
     try {
         // יישום הגדרות לפני רינדור הלוח
         applySettings();
-        
+
         const daysGrid = document.getElementById('daysGrid');
         const currentMonthElement = document.getElementById('currentMonth');
         const currentYearElement = document.getElementById('currentYear');
-        
+
         // ניקוי הלוח הקיים
         daysGrid.innerHTML = '';
-        
+
         if (isHebrewDisplay) {
             // מצב עברי-לועזי
-            
+
             // המרה לתאריך עברי
             const selectedHebDate = new HDate(selectedDate);
             const hebMonth = selectedHebDate.getMonth();
             const hebYear = selectedHebDate.getFullYear();
-            
+
             // מציאת היום הראשון והאחרון של החודש העברי
             const firstDayOfHebMonth = new HDate(1, hebMonth, hebYear);
             const daysInHebMonth = HDate.daysInMonth(hebMonth, hebYear);
             const lastDayOfHebMonth = new HDate(daysInHebMonth, hebMonth, hebYear);
-            
+
             // המרה לתאריכים לועזיים
             const firstGregorianDate = firstDayOfHebMonth.greg();
             const lastGregorianDate = lastDayOfHebMonth.greg();
-            
+
             // חישוב היום בשבוע של תחילת החודש העברי (0 = ראשון)
             const startingDay = firstGregorianDate.getDay();
-            
+
             // הצגת שם החודש
             const monthName = getHebrewMonthName(hebMonth, hebYear);
             const hebrewYear = numberToHebrewLetters(hebYear);
             currentMonthElement.textContent = monthName;
             currentYearElement.textContent = hebrewYear;
-            
+
             // ימים מהחודש הקודם להשלמת השבוע
             const prevMonthDays = startingDay;
             for (let i = prevMonthDays - 1; i >= 0; i--) {
@@ -760,7 +780,7 @@ function renderCalendar() {
                 prevDate.setDate(firstGregorianDate.getDate() - i - 1);
                 createDayElement(prevDate, daysGrid, true);
             }
-            
+
             // ימי החודש העברי הנוכחי
             let currentHebDate = new HDate(firstDayOfHebMonth);
             for (let i = 1; i <= daysInHebMonth; i++) {
@@ -768,11 +788,11 @@ function renderCalendar() {
                 createDayElement(currentDate, daysGrid, false);
                 currentHebDate = new HDate(i + 1, hebMonth, hebYear);
             }
-            
+
             // ימים מהחודש הבא להשלמת השבוע האחרון
             const lastDayOfWeek = lastGregorianDate.getDay();
             const nextMonthDays = (lastDayOfWeek === 6) ? 0 : 6 - lastDayOfWeek;
-            
+
             let nextDate = new Date(lastGregorianDate);
             for (let i = 1; i <= nextMonthDays; i++) {
                 nextDate.setDate(nextDate.getDate() + 1);
@@ -804,22 +824,22 @@ function renderCalendar() {
                 currentMonthElement.textContent = gregorianMonthName;
                 currentYearElement.textContent = gregorianYear.toString();
             }
-            
+
             // חישוב היום הראשון והאחרון של החודש הלועזי
             const year = selectedDate.getFullYear();
             const month = selectedDate.getMonth();
-            
+
             const firstDayOfMonth = new Date(year, month, 1);
             const lastDayOfMonth = new Date(year, month + 1, 0);
-            
+
             // חישוב היום בשבוע של תחילת החודש (0 = ראשון)
             const startingDay = firstDayOfMonth.getDay();
-            
+
             // הצגת שם החודש
             const monthName = firstDayOfMonth.toLocaleString('he', { month: 'long' });
             currentMonthElement.textContent = monthName;
             currentYearElement.textContent = year.toString();
-            
+
             // ימים מהחודש הקודם להשלמת השבוע
             const prevMonthDays = startingDay;
             for (let i = prevMonthDays - 1; i >= 0; i--) {
@@ -827,24 +847,24 @@ function renderCalendar() {
                 prevDate.setDate(firstDayOfMonth.getDate() - i - 1);
                 createDayElement(prevDate, daysGrid, true);
             }
-            
+
             // ימי החודש הנוכחי
             for (let i = 1; i <= lastDayOfMonth.getDate(); i++) {
                 const currentDate = new Date(year, month, i);
                 createDayElement(currentDate, daysGrid, false);
             }
-            
+
             // ימים מהחודש הבא להשלמת השבוע האחרון
             const lastDayOfWeek = lastDayOfMonth.getDay();
             const nextMonthDays = (lastDayOfWeek === 6) ? 0 : 6 - lastDayOfWeek;
-            
+
             let nextDate = new Date(lastDayOfMonth);
             for (let i = 1; i <= nextMonthDays; i++) {
                 nextDate.setDate(nextDate.getDate() + 1);
                 createDayElement(nextDate, daysGrid, true);
             }
         }
-        
+
     } catch (error) {
         console.error('שגיאה ביצירת הלוח:', error);
         showToast('שגיאה בהצגת הלוח: ' + error.message);
@@ -862,13 +882,13 @@ function clearSelectedDay() {
 function handleDayClick(dayElement, date) {
     // הסרת הבחירה הקודמת
     clearSelectedDay();
-    
+
     // הוספת סימון לתא הנבחר
     dayElement.classList.add('selected-day');
-    
+
     // שמירת התאריך הנבחר
     selectedDate = new Date(date);
-    
+
     // הצגת פרטי היום
     showDayDetails(date);
 }
@@ -877,10 +897,10 @@ function goToToday() {
     // נאפס את היום הנבחר
     currentDate = new Date();
     selectedDate = currentDate;  // נגדיר את היום הנבחר להיום הנוכחי
-    
+
     // נרנדר מחדש את הלוח
     renderCalendar();
-    
+
     showToast('עברת להיום');
 }
 
@@ -905,35 +925,35 @@ function createDayElement(date, container, isOutsideMonth) {
     if (isCurrentDay) {
         dayElement.classList.add('current-day');
     }
-    
+
     if (isOutsideMonth) {
         dayElement.classList.add('outside-month');
     } else {
         dayElement.style.cursor = 'pointer';
     }
-    
+
     const hebDate = new HDate(date);
-    
-    
+
+
     // בדיקה אם יש אירועים ביום זה והאם להציג אותם
     const settings = loadSettings();
     if (settings.showEvents) {
-        try {
+    try {
             const events = HebrewCalendar.getHolidaysOnDate(hebDate, eventOptions);
             if (events && events.length > 0) {
                 dayElement.classList.add('has-event');
             }
         } catch (error) {
             console.error('שגיאה בטעינת אירועים:', error);
+            }
         }
-    }
 
     // יצירת תצוגת התאריך
-    if (isHebrewDisplay) {
-        // תאריך לועזי בפינה
+        if (isHebrewDisplay) {
+            // תאריך לועזי בפינה
         const gregorianDate = document.createElement('div');
         gregorianDate.classList.add('secondary-date');
-        const month = date.toLocaleString('he', { month: 'short' });
+            const month = date.toLocaleString('he', { month: 'short' });
         gregorianDate.textContent = `${date.getDate()} ${month}`;
         dayElement.appendChild(gregorianDate);
 
@@ -942,13 +962,13 @@ function createDayElement(date, container, isOutsideMonth) {
         hebrewDate.classList.add('primary-date');
         hebrewDate.textContent = numberToHebrewLetters(hebDate.getDate());
         dayElement.appendChild(hebrewDate);
-    } else {
-        // תאריך עברי בפינה
+        } else {
+            // תאריך עברי בפינה
         const hebrewDate = document.createElement('div');
         hebrewDate.classList.add('secondary-date');
-        const monthArray = isLeapYear(hebDate.getFullYear()) ? hebrewMonthOrderLogicLeap : hebrewMonthOrderLogic;
-        const monthIndex = hebDate.getMonth() - 1;  // getMonth() מחזיר 1-13, אנחנו צריכים 0-12
-        const hebrewMonthName = monthArray[monthIndex];
+            const monthArray = isLeapYear(hebDate.getFullYear()) ? hebrewMonthOrderLogicLeap : hebrewMonthOrderLogic;
+            const monthIndex = hebDate.getMonth() - 1;  // getMonth() מחזיר 1-13, אנחנו צריכים 0-12
+            const hebrewMonthName = monthArray[monthIndex];
         hebrewDate.textContent = `${numberToHebrewLetters(hebDate.getDate())} ${hebrewMonthName}`;
         dayElement.appendChild(hebrewDate);
 
@@ -971,8 +991,8 @@ function createDayElement(date, container, isOutsideMonth) {
     dayElement.dataset.date = date.toISOString();
     
     // הוספת אירוע לחיצה
-    if (!isOutsideMonth) {
-        dayElement.addEventListener('click', () => {
+        if (!isOutsideMonth) {
+            dayElement.addEventListener('click', () => {
             // הסרת הבחירה הקודמת
             clearSelectedDay();
             
@@ -985,8 +1005,8 @@ function createDayElement(date, container, isOutsideMonth) {
             // בדיקה אם זה היום הנוכחי
             if (isCurrentDay) {
                 dayElement.classList.add('current-day');
-            }
-            
+        }
+
             // הצגת פרטי היום
             showDayDetails(date);
         });
@@ -1017,7 +1037,7 @@ function showDayDetails(date) {
     // המרה לתאריך עברי
     const hebDate = new HDate(date);
     const hebrewMonthName = getHebrewMonthName(hebDate.getMonth(), hebDate.getFullYear());
-    
+
     // הצגת התאריך
     modalDate.innerHTML = `
         <div class="hebrew-date">${numberToHebrewLetters(hebDate.getDate())} ב${hebrewMonthName} ${numberToHebrewLetters(hebDate.getFullYear())}</div>
@@ -1026,7 +1046,7 @@ function showDayDetails(date) {
 
     // טעינת אירועים
     const settings = loadSettings();
-    
+
     try {
         const events = HebrewCalendar.getHolidaysOnDate(hebDate, eventOptions);
         if (events && events.length > 0) {
@@ -1101,18 +1121,18 @@ function showDayDetails(date) {
     if (date.getDay() === 5) { // יום שישי
         timesContent += `<div>הדלקת נרות: ${filteredTimes.candlelighting}</div>`;
     }
-    
+
     timesContent += `<div>שקיעת החמה: ${filteredTimes.sunset}</div>`;
     timesContent += `<div>צאת הכוכבים: ${filteredTimes.tzeit}</div>`; // Always display tzeit
 
     // זמני מוצאי שבת
     if (date.getDay() === 6) { // שבת
         // מוצאי שבת רגיל או חזו"א
-        
+
         timesContent += `<div>מוצאי שבת: ${filteredTimes.shabbatEnd}</div>`;
-        
+
         timesContent += `<div>מוצאי שבת ר"ת: ${dayTimes.rtzeit72}</div>`;
-        
+
     }
 
     timesContent += '</div>';
@@ -1144,7 +1164,7 @@ function showDayDetails(date) {
 // מאזיני אירועים
 function setupEventListeners() {
     console.log('Setting up event listeners');
-    
+
     // כפתורי ניווט
     const prevMonthBtn = document.getElementById('prevMonth');
     const nextMonthBtn = document.getElementById('nextMonth');
@@ -1154,7 +1174,7 @@ function setupEventListeners() {
     const toggleBtn = document.getElementById('toggleCalendar');
     const settingsBtn = document.getElementById('settingsBtn');
     const settingsModal = document.getElementById('settingsModal');
-    
+
     // כפתורי ניווט חודשים
     if (prevMonthBtn) {
         prevMonthBtn.addEventListener('click', () => {
@@ -1163,9 +1183,9 @@ function setupEventListeners() {
                 const currentHebDate = new HDate(selectedDate);
                 const hebMonth = currentHebDate.getMonth();
                 const hebYear = currentHebDate.getFullYear();
-                
+
                 let prevMonth, prevYear;
-                
+
                 if (hebMonth === 7) { // אם אנחנו בתשרי
                     prevMonth = 6; // נחזור לאלול
                     prevYear = hebYear - 1; // של השנה הקודמת
@@ -1177,7 +1197,7 @@ function setupEventListeners() {
                     prevYear = hebYear;
                     prevMonth = hebMonth - 1;
                 }
-                
+
                 const prevMonthDate = new HDate(1, prevMonth, prevYear);
                 selectedDate = prevMonthDate.greg();
                 currentHebrewYear = prevYear;  // Update currentHebrewYear
@@ -1196,14 +1216,14 @@ function setupEventListeners() {
                 const currentHebDate = new HDate(selectedDate);
                 const hebMonth = currentHebDate.getMonth();
                 const hebYear = currentHebDate.getFullYear();
-                
+
                 let nextMonth, nextYear;
-                
+
                 if (hebMonth === 6) { // אם אנחנו באלול
                     nextMonth = 7; // נעבור לתשרי
                     nextYear = hebYear + 1; // של השנה הבאה
                 }
-                
+
                 if (HDate.isLeapYear(hebYear) && hebMonth === 12) { // אדר א' בשנה מעוברת
                     nextMonth = 13; // נעבור לאדר ב'
                     nextYear = hebYear;
@@ -1217,7 +1237,7 @@ function setupEventListeners() {
                     nextYear = hebYear;
                     nextMonth = hebMonth + 1;
                 }
-                
+
                 const nextMonthDate = new HDate(1, nextMonth, nextYear);
                 selectedDate = nextMonthDate.greg();
                 currentHebrewYear = nextYear;  // Update currentHebrewYear
@@ -1237,7 +1257,7 @@ function setupEventListeners() {
                 const hebYear = currentHebDate.getFullYear();
                 const prevYear = hebYear - 1;
                 currentHebrewYear = prevYear;  // Update currentHebrewYear
-                
+
                 // יצירת תאריך בשנה הקודמת, באותו חודש ויום
                 const prevYearDate = new HDate(
                     currentHebDate.getDate(),
@@ -1259,7 +1279,7 @@ function setupEventListeners() {
                 const hebYear = currentHebDate.getFullYear();
                 const nextYear = hebYear + 1;
                 currentHebrewYear = nextYear;  // Update currentHebrewYear
-                
+
                 // יצירת תאריך בשנה הבאה, באותו חודש ויום
                 const nextYearDate = new HDate(
                     currentHebDate.getDate(),
@@ -1279,10 +1299,10 @@ function setupEventListeners() {
         todayBtn.addEventListener('click', () => {
             currentDate = new Date();
             selectedDate = currentDate;  // נגדיר את היום הנבחר להיום הנוכחי
-    
+
             // נרנדר מחדש את הלוח
             renderCalendar();
-    
+
             showToast('עברת להיום');
         });
     }
@@ -1329,6 +1349,7 @@ function setupEventListeners() {
 document.addEventListener('DOMContentLoaded', () => {
     setupDisplaySettings();
     applySettings(); // החלת ההגדרות השמורות
+    setupEventsModalEventListeners(); 
     setupDisplayModalEventListeners(); // הוספת מאזיני אירועים למודאל התצוגה
     setupTimesModalEventListeners();
     setupSidebarEventListeners();
@@ -1341,10 +1362,10 @@ function setupDisplayModalEventListeners() {
     const displayModal = document.getElementById('displayModal');
     const displayForm = document.getElementById('displaySettingsForm');
     const displayCloseBtn = displayModal.querySelector('.close');
-    
+
 
     if (displayModal && displayForm && displayCloseBtn) {
-   
+
 
         displayCloseBtn.addEventListener('click', hideDisplayModal);
 
@@ -1395,18 +1416,18 @@ function convertNumberToHebrewYear(year) {
 function filterTimesBySettings(dayTimes, date) {
     const settings = loadSettings();
     const filteredTimes = {};
-    
+
     // עלות השחר - בדיקת הגדרה מדויקת
     filteredTimes.dawn = settings.dawnType === '90' ? dayTimes.dawn90 : dayTimes.dawn72;
-    
+
     // זמני ק"ש ותפילה
     filteredTimes.shemaGra = dayTimes.shemaGra;
     filteredTimes.tefilaGra = dayTimes.tefilaGra;
-    
+
     // זמני מג"א
     filteredTimes.shemaMga = settings.dawnType === '90' ? dayTimes.shemaMga90 : dayTimes.shemaMga72;
     filteredTimes.tefilaMga = settings.dawnType === '90' ? dayTimes.tefilaMga90 : dayTimes.tefilaMga72;
-    
+
     // צאת הכוכבים - בדיקת הגדרה מדויקת
     switch(settings.tzeitType) {
         case '22.5':
@@ -1418,14 +1439,14 @@ function filterTimesBySettings(dayTimes, date) {
         default: // '14' או כל ערך אחר
             filteredTimes.tzeit = dayTimes.tzeit3;
     }
-    
+
     // מוצאי שבת - בדיקת הגדרה מדויקת
     if (date.getDay() === 6) { // שבת
-        filteredTimes.shabbatEnd = settings.shabbatEndType === 'hazon' 
-            ? dayTimes.hazon40 
+        filteredTimes.shabbatEnd = settings.shabbatEndType === 'hazon'
+            ? dayTimes.hazon40
             : dayTimes.shabbatEnd;
     }
-    
+
     // זמנים קבועים
     filteredTimes.sunrise = dayTimes.sunrise;
     filteredTimes.sunset = dayTimes.sunset;
@@ -1434,7 +1455,7 @@ function filterTimesBySettings(dayTimes, date) {
     filteredTimes.minchaKetana = dayTimes.minchaKetana;
     filteredTimes.plag = dayTimes.plag;
     filteredTimes.talitTefilin = dayTimes.talitTefilin;
-    
+
     // זמני ערב שבת
     if (date.getDay() === 5) { // יום שישי
         filteredTimes.candlelighting = dayTimes.candlelighting;
@@ -1450,27 +1471,27 @@ async function loadTimesData() {
         const response = await fetch('tables/tables.xlsx');
         const data = new Uint8Array(await response.arrayBuffer());
         const workbook = XLSX.read(data, { type: 'array' });
-        
+
         // console.log('=== בדיקת נתונים - השוואה בין שתי השיטות ===');
-        
+
         // נעבור על כל הגליונות (1-12)
         for (let month = 1; month <= 12; month++) {
             const worksheet = workbook.Sheets[month.toString()];
             if (worksheet) {
-                const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, {
                     header: 1,
                     raw: false
                 });
-                
+
                 // נדלג על שורת הכותרות ונמפה כל שורה לאובייקט DayTimes
                 const daysData = jsonData.slice(1)
                     .map(row => new DayTimes(row))
                     .filter(day => day.dayOfMonth); // נסנן שורות ריקות
-                
+
                 timesManager.monthsData.set(month, daysData);
             }
         }
-        
+
         console.log('נתוני הזמנים נטענו בהצלחה');
         return true;
     } catch (error) {
@@ -1488,27 +1509,27 @@ if (typeof XLSX === 'undefined' && window.XLSX) {
 async function downloadExistingExcel() {
     try {
         const response = await fetch('/tables/tables.xlsx');
-        
+
         if (!response.ok) {
             throw new Error('Failed to fetch Excel file');
         }
-        
+
         const blob = await response.blob();
         const fileName = 'times_table.xlsx';
-        
+
         // יצירת קישור להורדה
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
         link.download = fileName;
-        
+
         // הפעלת ההורדה
         document.body.appendChild(link);
         link.click();
-        
+
         // ניקוי
         document.body.removeChild(link);
         URL.revokeObjectURL(link.href);
-        
+
         showToast(`הקובץ ${fileName} הורד בהצלחה`);
     } catch (error) {
         console.error('שגיאה בהורדת קובץ Excel:', error);
@@ -1559,25 +1580,25 @@ class TimesManager {
             const response = await fetch('tables/tables.xlsx');
             const data = new Uint8Array(await response.arrayBuffer());
             const workbook = XLSX.read(data, { type: 'array' });
-            
+
             // נעבור על כל הגליונות (1-12)
             for (let month = 1; month <= 12; month++) {
                 const worksheet = workbook.Sheets[month.toString()];
                 if (worksheet) {
-                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, {
                         header: 1,
                         raw: false
                     });
-                    
+
                     // נדלג על שורת הכותרות ונמפה כל שורה לאובייקט DayTimes
                     const daysData = jsonData.slice(1)
                         .map(row => new DayTimes(row))
                         .filter(day => day.dayOfMonth); // נסנן שורות ריקות
-                    
+
                     this.monthsData.set(month, daysData);
                 }
             }
-            
+
             console.log('נתוני הזמנים נטענו בהצלחה');
             return true;
         } catch (error) {
@@ -1590,11 +1611,11 @@ class TimesManager {
     getTimesForDate(date) {
         const month = date.getMonth() + 1;  // getMonth() מחזיר 0-11
         const day = date.getDate();
-        
+
         const monthData = this.monthsData.get(month);
         if (!monthData) return null;
-        
-        return monthData.find(dayTimes => 
+
+        return monthData.find(dayTimes =>
             parseInt(dayTimes.dayOfMonth) === day
         );
     }
@@ -1612,7 +1633,7 @@ let timesManager;
 document.addEventListener('DOMContentLoaded', async () => {
     timesManager = new TimesManager();
     await timesManager.initialize();
-    
+
     // הוספת הפניה גלובלית
     window.timesManager = timesManager;
 });
@@ -1627,55 +1648,116 @@ function loadSettings() {
         dawnType: '72',           // '72' או '90' דקות
         tzeitType: '14',          // '14', '22.5', או '24' דקות
         shabbatEndType: 'regular', // 'regular' או 'hazon'
-        showDawn: true,
-        showStars: true,
-        showShabbatEnd: true,
-        autoTimeZone: true,
-        showEvents: true
+        showEvents: true,
+        eventCategories: {
+            holidays: true,      // חגים, כולל חגים מודרניים
+            weeklyPortion: true, // פרשת שבוע
+            specialDays: true    // ימים מיוחדים (ראשי חדשים, תעניות, וכו')
+        }
     };
-    
+
     try {
         const savedDisplaySettings = localStorage.getItem('display-settings');
-        const savedTimesSettings = localStorage.getItem('times-settings');
-        
-        const displaySettings = savedDisplaySettings ? JSON.parse(savedDisplaySettings) : defaultSettings.display;
-        const timesSettings = savedTimesSettings ? JSON.parse(savedTimesSettings) : {};
-        
-        return {
-            display: displaySettings,
-            ...defaultSettings,
-            ...timesSettings
-        };
+        const savedTimesSettings = localStorage.getItem('settings');
+        const savedEventCategoriesSettings = localStorage.getItem('event-categories-settings');
+
+        let settings = { ...defaultSettings };
+
+        if (savedDisplaySettings) {
+            settings.display = JSON.parse(savedDisplaySettings);
+        }
+
+        if (savedTimesSettings) {
+            const times = JSON.parse(savedTimesSettings);
+            settings.dawnType = times.dawnType || settings.dawnType;
+            settings.tzeitType = times.tzeitType || settings.tzeitType;
+            settings.shabbatEndType = times.shabbatEndType || settings.shabbatEndType;
+        }
+
+        if (savedEventCategoriesSettings) {
+            settings.eventCategories = JSON.parse(savedEventCategoriesSettings);
+        }
+
+        return settings;
     } catch (error) {
         console.error('Error loading settings:', error);
         return defaultSettings;
     }
 }
 
-// שמירת הגדרות באחסון המקומי
-// function saveSettings(settings) {
-//     try {
-//         localStorage.setItem('calendarSettings', JSON.stringify(settings));
-//         showToast('ההגדרות נשמרו בהצלחה');
-//         return true;
-//     } catch (error) {
-//         console.error('Error saving settings:', error);
-//         showToast('Error saving settings', 'error');
-//         return false;
-//     }
-// }
+// פונקציה לשמירת הגדרות אירועים
+function setupEventsModalEventListeners() {
+    const eventsModal = document.getElementById('eventsModal');
+    const eventsForm = document.getElementById('eventsSettingsForm');
+    const eventsCloseBtn = eventsModal.querySelector('.close');
+
+    if (eventsModal && eventsForm && eventsCloseBtn) {
+        // טעינת ההגדרות הקיימות בעת פתיחת המודאל
+        eventsModal.addEventListener('modal-show', () => {
+            const settings = loadSettings();
+            eventsForm.querySelector('[name="eventCategories.holidays"]').checked = settings.eventCategories.holidays;
+            eventsForm.querySelector('[name="eventCategories.weeklyPortion"]').checked = settings.eventCategories.weeklyPortion;
+            eventsForm.querySelector('[name="eventCategories.specialDays"]').checked = settings.eventCategories.specialDays;
+        });
+
+        // הוספת מאזין לשמירת הטופס
+        eventsForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const formData = new FormData(eventsForm);
+            
+            // המרת הגדרות הטופס למבנה הנכון
+            const eventCategoriesSettings = {
+                holidays: formData.get('eventCategories.holidays') === 'on',
+                weeklyPortion: formData.get('eventCategories.weeklyPortion') === 'on',
+                specialDays: formData.get('eventCategories.specialDays') === 'on'
+            };
+
+            // שמירת ההגדרות
+            localStorage.setItem('event-categories-settings', JSON.stringify(eventCategoriesSettings));
+            
+            // עדכון הגדרות גלובליות
+            settings.eventCategories = eventCategoriesSettings;
+            
+            // רענון התצוגה
+            renderCalendar();
+            
+            // סגירת המודאל והצגת הודעה
+            hideEventsModal();
+            showToast('הגדרות האירועים נשמרו בהצלחה');
+        });
+
+        eventsCloseBtn.addEventListener('click', hideEventsModal);
+
+        // סגירת המודאל בלחיצה מחוץ לו
+        document.addEventListener('click', (event) => {
+            if (event.target === eventsModal) {
+                hideEventsModal();
+            }
+        });
+    } else {
+        console.error('One or more events modal elements not found');
+    }
+}
+
+
+function hideEventsModal() {
+    const eventsModal = document.getElementById('eventsModal');
+    if (eventsModal) {
+        eventsModal.classList.remove('active');
+    }
+}
 
 // החלת ההגדרות על העיצוב
 function applySettings(settings = loadSettings()) {
     const displaySettings = settings.display;
-    
+
     if (displaySettings) {
         // Update font size
         document.documentElement.style.setProperty(
             '--font-size-multiplier',
             getFontSizeMultiplier(displaySettings.fontSize)
         );
-        
+
         // Update theme color
         const themeColors = getThemeColor(displaySettings.themeColor);
         document.documentElement.style.setProperty('--theme-color', themeColors.main);
@@ -1707,7 +1789,7 @@ function getThemeColor(theme) {
             secondary: '#d35400'
         }
     };
-    
+
     return themeColors[theme] || themeColors.blue;
 }
 
@@ -1736,7 +1818,7 @@ function setupDisplaySettings() {
         displaySettingsForm.addEventListener('submit', (event) => {
             event.preventDefault();
             const formData = new FormData(displaySettingsForm);
-            
+
             const newSettings = {
                 display: {
                     fontSize: formData.get('fontSize'),
@@ -1791,11 +1873,11 @@ function setupSidebarEventListeners() {
     const hamburgerBtn = document.getElementById('hamburgerBtn');
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('overlay');
-    
+
     console.log('hamburgerBtn:', hamburgerBtn);
     console.log('sidebar:', sidebar);
     console.log('overlay:', overlay);
-    
+
     if (hamburgerBtn && sidebar && overlay) {
         hamburgerBtn.addEventListener('click', () => {
             console.log('Hamburger button clicked');
@@ -1821,28 +1903,21 @@ function setupSidebarEventListeners() {
             item.addEventListener('click', () => {
                 const modalId = item.getAttribute('data-modal');
                 const modal = document.getElementById(modalId);
-                
+
                 sidebar.classList.remove('active');
                 overlay.classList.remove('active');
-                
+
                 if (modal) {
-                    modal.classList.add('active');
+                    if (modalId === 'eventsModal') {
+                        showEventsModal();
+                    } else {
+                        modal.classList.add('active');
+                    }
                 }
             });
         });
     } else {
         console.error('One or more elements not found');
-    }
-}
-
-function closeModal(modal) {
-    if (modal) {
-        modal.classList.remove('active');
-    }
-    
-    const overlay = document.getElementById('overlay');
-    if (overlay) {
-        overlay.classList.remove('active');
     }
 }
 
@@ -1856,7 +1931,7 @@ function setupTimesModalEventListeners() {
     if (timesModal && timesForm && timesCloseBtn && timesSaveBtn) {
         // טעינת הגדרות זמני היום למודאל
         const timesSettings = loadTimesSettings();
-        
+
         // עדכון ערכי הטופס בהתאם להגדרות השמורות
         timesForm.querySelector('input[name="autoTimeZone"]').checked = timesSettings.autoTimeZone;
         timesForm.querySelector('select[name="dawnType"]').value = timesSettings.dawnType;
@@ -1902,9 +1977,9 @@ function saveTimesSettings(input) {
         showStars: input.showStars,
         showShabbatEnd: input.showShabbatEnd
     };
-    
+
     localStorage.setItem('times-settings', JSON.stringify(timesSettings));
-    
+
     applyTimesSettings(); // פונקציה שתחיל את ההגדרות
     renderCalendar();
 }
@@ -1919,7 +1994,7 @@ function loadTimesSettings() {
         showStars: true,
         showShabbatEnd: true
     };
-    
+
     try {
         const savedTimesSettings = localStorage.getItem('times-settings');
         return savedTimesSettings ? JSON.parse(savedTimesSettings) : defaultTimesSettings;
@@ -1940,5 +2015,115 @@ function hideTimesModal() {
     const timesModal = document.getElementById('timesModal');
     if (timesModal) {
         timesModal.classList.remove('active');
+    }
+}
+
+// פונקציה להדפסת כל האירועים בחודש
+function printMonthEvents(year, month) {
+    console.log(`אירועים בחודש ${getHebrewMonthName(month, year)} ${convertNumberToHebrewYear(year)}:`);
+
+    // קבלת מספר הימים בחודש
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    for (let day = 1; day <= daysInMonth; day++) {
+        const currentDate = new Date(year, month, day);
+        const hebDate = new HDate(currentDate);
+        const events = HebrewCalendar.getHolidaysOnDate(hebDate, eventOptions);
+
+        if (events && events.length > 0) {
+            // הדפסת תאריך עברי ולועזי
+            console.log(`תאריך: ${hebDate.getDate()} ${getHebrewMonthName(hebDate.getMonth() - 1, hebDate.getFullYear())} ${convertNumberToHebrewYear(hebDate.getFullYear())} (${currentDate.getDate()}/${currentDate.getMonth() + 1}/${currentDate.getFullYear()})`);
+
+            events.forEach(event => {
+                console.log(`- ${event.desc}`);
+            });
+        }
+    }
+}
+
+function printEventsWithCategories(events) {
+    console.log('אירועים מקוטלגים:');
+
+    events.forEach(event => {
+        const mappedCategory = mapEventCategory(event);
+
+        if (mappedCategory) {
+            console.log(`תאריך: ${event.getDate().getDate()} ${getHebrewMonthName(event.getDate().getMonth(), event.getDate().getFullYear())} ${convertNumberToHebrewYear(event.getDate().getFullYear())}`);
+            console.log(`- אירוע: ${event.getDesc()}`);
+            console.log(`- קטגוריה: ${mappedCategory}\n`);
+        }
+    });
+}
+
+function mapEventCategory(event) {
+    const settings = loadSettings();
+    const desc = event.getDesc().toLowerCase();
+    const categories = event.getCategories();
+
+    // מיפוי מיוחד לאירועים ספציפיים
+    const specialMappings = [
+        { keywords: ['yom kippur katan'], category: 'תענית', enabled: settings.eventCategories.specialDays },
+        { keywords: ['shabbat', 'שבת'], category: 'שבת מיוחדת', enabled: settings.eventCategories.specialDays },
+        { keywords: ['rosh chodesh', 'ראש חודש'], category: 'ראש חודש', enabled: settings.eventCategories.specialDays },
+        { keywords: ['tu bishvat', 'טו בשבט'], category: 'חגים משניים', enabled: settings.eventCategories.holidays },
+        { keywords: ['family day'], category: 'חג מודרני', enabled: settings.eventCategories.specialDays }
+    ];
+
+    // בדיקת מיפויים מיוחדים
+    for (const mapping of specialMappings) {
+        if (mapping.enabled && mapping.keywords.some(keyword => desc.includes(keyword))) {
+            return mapping.category;
+        }
+    }
+
+    // מיפוי קטגוריות סטנדרטי
+    const categoryMappings = {
+        'parashat': settings.eventCategories.weeklyPortion ? 'פרשת שבוע' : null,
+        'major_holiday': settings.eventCategories.holidays ? 'חגים עיקריים' : null,
+        'minor_holiday': settings.eventCategories.holidays ? 'חגים משניים' : null,
+        'holiday': settings.eventCategories.holidays ? 'חגים' : null
+    };
+
+    // מציאת הקטגוריה הראשונה המתאימה
+    for (const category of categories) {
+        if (categoryMappings[category]) {
+            return categoryMappings[category];
+        }
+    }
+
+    // טיפול מיוחד בפרשות שבוע
+    if (event.constructor.name === 'ParshaEvent' && settings.eventCategories.weeklyPortion) {
+        return 'פרשת שבוע';
+    }
+
+    return null;
+}
+
+function showEventsModal() {
+    const eventsModal = document.getElementById('eventsModal');
+    const overlay = document.getElementById('overlay');
+    
+    if (eventsModal) {
+        // הפעלת אירוע show לפני הצגת המודאל
+        const showEvent = new CustomEvent('modal-show');
+        eventsModal.dispatchEvent(showEvent);
+        
+        // הצגת המודאל וה-overlay
+        eventsModal.classList.add('active');
+        if (overlay) {
+            overlay.classList.add('active');
+        }
+    }
+}
+
+function hideEventsModal() {
+    const eventsModal = document.getElementById('eventsModal');
+    const overlay = document.getElementById('overlay');
+    
+    if (eventsModal) {
+        eventsModal.classList.remove('active');
+        if (overlay) {
+            overlay.classList.remove('active');
+        }
     }
 }
