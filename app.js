@@ -1054,11 +1054,11 @@ function showDayDetails(date) {
     const settings = loadSettings();
 
     try {
-        const events = HebrewCalendar.getHolidaysOnDate(hebDate, eventOptions);
+        const events = getFilteredEventsForDay(date);
         if (events && events.length > 0) {
             modalEvents.innerHTML = `
                 ${events.map(event => `<div class="event-item">${event.render('he')}</div>`).join('')}
-            `;
+        `;
             // הוספת סגנון לאירועים
             const currentSettings = loadSettings();
             const themeColorObj = getThemeColor(currentSettings.display?.themeColor || 'blue');

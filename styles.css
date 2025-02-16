@@ -254,6 +254,12 @@ header {
     color: white !important;
 }
 
+#daysGrid .day:not(.outside-month):hover:not(.current-day):not(.selected-day) .event-text {
+    background-color: rgba(255, 255, 255, 0.3);
+    color: white;
+    text-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+}
+
 .day.has-event::after {
     content: "";
     position: absolute;
