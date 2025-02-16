@@ -744,6 +744,25 @@ function renderCalendar() {
         const currentMonthElement = document.getElementById('currentMonth');
         const currentYearElement = document.getElementById('currentYear');
 
+        // הדפסת כל האירועים לחודש הנוכחי
+        let monthEvents;
+        if (isHebrewDisplay) {
+            const hebDate = new HDate(selectedDate);
+            monthEvents = getAllMonthEvents(hebDate.getFullYear(), hebDate.getMonth(), true);
+            console.log('אירועים בחודש העברי:', hebDate.getMonthName('he'), hebDate.getFullYear());
+        } else {
+            monthEvents = getAllMonthEvents(selectedDate.getFullYear(), selectedDate.getMonth(), false);
+            console.log('אירועים בחודש הלועזי:', selectedDate.toLocaleString('he', { month: 'long' }), selectedDate.getFullYear());
+        }
+
+        // הדפסת האירועים לפי תאריך
+        for (const [day, events] of monthEvents) {
+            console.log(`אירועים ליום ${day}:`);
+            events.forEach(event => {
+                console.log(`- ${event.render('he')}`);
+            });
+        }
+
         // ניקוי הלוח הקיים
         daysGrid.innerHTML = '';
 
@@ -814,7 +833,7 @@ function renderCalendar() {
             // הצגת שם החודש והשנה
             const gregorianMonthName = selectedDate.toLocaleString('he-IL', { month: 'long' });
             const gregorianYear = selectedDate.getFullYear();
-            
+
             currentMonthElement.textContent = gregorianMonthName;
             currentYearElement.textContent = gregorianYear;
             // ימים מהחודש הקודם להשלמת השבוע
@@ -911,34 +930,23 @@ function createDayElement(date, container, isOutsideMonth) {
 
     const hebDate = new HDate(date);
 
-
-    // בדיקה אם יש אירועים ביום זה והאם להציג אותם
-    const settings = loadSettings();
-    if (settings.showEvents) {
-        try {
-            const events = HebrewCalendar.getHolidaysOnDate(hebDate, eventOptions);
-            if (events && events.length > 0) {
-                dayElement.classList.add('has-event');
-            }
-        } catch (error) {
-            console.error('שגיאה בטעינת אירועים:', error);
-        }
-    }
-
     // יצירת תצוגת התאריך
+    const dateContainer = document.createElement('div');
+    dateContainer.classList.add('date-container');
+
     if (isHebrewDisplay) {
         // תאריך לועזי בפינה
         const gregorianDate = document.createElement('div');
         gregorianDate.classList.add('secondary-date');
         const month = date.toLocaleString('he', { month: 'short' });
         gregorianDate.textContent = `${date.getDate()} ${month}`;
-        dayElement.appendChild(gregorianDate);
+        dateContainer.appendChild(gregorianDate);
 
         // תאריך עברי במרכז
         const hebrewDate = document.createElement('div');
         hebrewDate.classList.add('primary-date');
         hebrewDate.textContent = numberToHebrewLetters(hebDate.getDate());
-        dayElement.appendChild(hebrewDate);
+        dateContainer.appendChild(hebrewDate);
     } else {
         // תאריך עברי בפינה
         const hebrewDate = document.createElement('div');
@@ -947,13 +955,33 @@ function createDayElement(date, container, isOutsideMonth) {
         const monthIndex = hebDate.getMonth() - 1;  // getMonth() מחזיר 1-13, אנחנו צריכים 0-12
         const hebrewMonthName = monthArray[monthIndex];
         hebrewDate.textContent = `${numberToHebrewLetters(hebDate.getDate())} ${hebrewMonthName}`;
-        dayElement.appendChild(hebrewDate);
+        dateContainer.appendChild(hebrewDate);
 
         // תאריך לועזי במרכז
         const gregorianDate = document.createElement('div');
         gregorianDate.classList.add('primary-date');
         gregorianDate.textContent = date.getDate();
-        dayElement.appendChild(gregorianDate);
+        dateContainer.appendChild(gregorianDate);
+    }
+
+    dayElement.appendChild(dateContainer);
+
+    // הוספת האירועים
+    if (!isOutsideMonth) {
+        const events = getFilteredEventsForDay(date);
+        if (events.length > 0) {
+            const eventsContainer = document.createElement('div');
+            eventsContainer.classList.add('events-container');
+            
+            events.forEach(event => {
+                const eventElement = document.createElement('div');
+                eventElement.classList.add('event-text');
+                eventElement.textContent = event.render('he');
+                eventsContainer.appendChild(eventElement);
+            });
+            
+            dayElement.appendChild(eventsContainer);
+        }
     }
 
     // בדיקה אם זה היום שנבחר
@@ -990,6 +1018,7 @@ function createDayElement(date, container, isOutsideMonth) {
     }
 
     container.appendChild(dayElement);
+    return dayElement;
 }
 
 // הצגת פרטי היום
@@ -1285,16 +1314,16 @@ function setupEventListeners() {
     }
 
     // כפתור החלפת תצוגה
-    
-        if (toggleBtn) {
-            // שימוש ב-onclick במקום addEventListener
-            toggleBtn.onclick = () => {
-                isHebrewDisplay = !isHebrewDisplay;
-                toggleBtn.textContent = isHebrewDisplay ? 'לועזי עברי' : 'עברי לועזי';
-                renderCalendar();
-            };
-        }
-    
+
+    if (toggleBtn) {
+        // שימוש ב-onclick במקום addEventListener
+        toggleBtn.onclick = () => {
+            isHebrewDisplay = !isHebrewDisplay;
+            toggleBtn.textContent = isHebrewDisplay ? 'לועזי עברי' : 'עברי לועזי';
+            renderCalendar();
+        };
+    }
+
 
     // הוספת מאזיני אירועים לקלט שנה וחודש
     setupYearInput();
@@ -1333,7 +1362,6 @@ document.addEventListener('DOMContentLoaded', () => {
     setupDisplayModalEventListeners(); // הוספת מאזיני אירועים למודאל התצוגה
     setupTimesModalEventListeners();
     setupSidebarEventListeners();
-    setupEventListeners();
     initCalendar();
 });
 
@@ -1655,7 +1683,11 @@ function loadSettings() {
         }
 
         if (savedEventCategoriesSettings) {
-            settings.eventCategories = JSON.parse(savedEventCategoriesSettings);
+            const savedCategories = JSON.parse(savedEventCategoriesSettings);
+            settings.eventCategories = {
+                ...defaultSettings.eventCategories,  // קודם ברירת המחדל
+                ...savedCategories                   // ואז הערכים השמורים
+            };
         }
 
         return settings;
@@ -1695,29 +1727,21 @@ function setupEventsModalEventListeners() {
             // שמירת ההגדרות
             localStorage.setItem('event-categories-settings', JSON.stringify(eventCategoriesSettings));
 
-            // עדכון הגדרות גלובליות
-            settings.eventCategories = eventCategoriesSettings;
-
-            // רענון התצוגה
+            // רענון התצוגה מיד
             renderCalendar();
 
-            // סגירת המודאל והצגת הודעה
+            // סגירת המודאל
             hideEventsModal();
-            showToast('הגדרות האירועים נשמרו בהצלחה');
+
+            // הצגת הודעת אישור
+            showToast('ההגדרות נשמרו בהצלחה');
         });
 
         eventsCloseBtn.addEventListener('click', hideEventsModal);
-
-        // סגירת המודאל בלחיצה מחוץ לו
-        document.addEventListener('click', (event) => {
-            if (event.target === eventsModal) {
-                hideEventsModal();
-            }
-        });
-    } else {
-        console.error('One or more events modal elements not found');
     }
 }
+
+
 
 
 function hideEventsModal() {
@@ -2105,5 +2129,142 @@ function hideEventsModal() {
         if (overlay) {
             overlay.classList.remove('active');
         }
+    }
+}
+
+// פונקציה לקבלת כל האירועים בחודש
+function getAllMonthEvents(year, month, isHebrewMonth = false) {
+    const events = new Map(); // מפה של תאריך -> רשימת אירועים
+
+    try {
+        if (isHebrewMonth) {
+            // אם זה חודש עברי
+            const daysInMonth = HDate.daysInMonth(month, year);
+            for (let day = 1; day <= daysInMonth; day++) {
+                const hebDate = new HDate(day, month, year);
+                const gregDate = hebDate.greg();
+                const dayEvents = getFilteredEventsForDay(gregDate);
+                if (dayEvents.length > 0) {
+                    events.set(day, dayEvents);
+                }
+            }
+        } else {
+            // אם זה חודש לועזי
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+
+            for (let date = new Date(firstDay); date <= lastDay; date.setDate(date.getDate() + 1)) {
+                const dayEvents = getFilteredEventsForDay(new Date(date));
+                if (dayEvents.length > 0) {
+                    events.set(date.getDate(), dayEvents);
+                }
+            }
+        }
+    } catch (error) {
+        console.error('שגיאה בטעינת אירועי החודש:', error);
+    }
+
+    return events;
+}
+
+// פונקציה לקבלת האירועים המסוננים ליום מסוים
+function getFilteredEventsForDay(date) {
+    const settings = loadSettings();
+    console.log('הגדרות נוכחיות:', settings);
+    
+    if (!settings.showEvents) {
+        return [];
+    }
+
+    try {
+        const hebDate = new HDate(date);
+        let events = HebrewCalendar.getHolidaysOnDate(hebDate, eventOptions);
+        
+        console.log('אירועים לתאריך:', hebDate.toString(), events ? events.map(e => ({
+            desc: e.getDesc(),
+            categories: e.getCategories(),
+            render: e.render('he')
+        })) : 'אין אירועים');
+
+        if (!events) {
+            events = [];
+        }
+
+        // הוספת פרשת השבוע
+        if (settings.eventCategories.weeklyPortion) {
+            if (hebDate.getDay() === 6) {  // אם זה יום שבת
+                const events1 = HebrewCalendar.calendar({
+                    year: hebDate.getFullYear(),
+                    isHebrewYear: true,
+                    sedrot: true,
+                    noHolidays: true
+                });
+
+                const parashaEvent = events1.find(ev => {
+                    return ev.getDate().toString() === hebDate.toString() &&
+                           ev.getDesc().startsWith("Parashat");
+                });
+                
+                if (parashaEvent) {
+                    events.unshift(parashaEvent);
+                }
+            }
+        }
+
+        if (events.length === 0) {
+            return [];
+        }
+
+        // סינון האירועים לפי הקטגוריות המופעלות
+        const filteredEvents = events.filter(event => {
+            const desc = event.getDesc().toLowerCase();
+            const categories = event.getCategories();
+            const hebrewDesc = event.render('he').toLowerCase();
+
+            console.log('בודק אירוע:', {
+                desc,
+                hebrewDesc,
+                categories,
+                render: event.render('he')
+            });
+
+            // מיפוי מיוחד לאירועים ספציפיים
+            const specialMappings = [
+                { keywords: ['yom kippur katan', 'יום כיפור קטן'], enabled: settings.eventCategories.specialDays },
+                { keywords: ['shabbat', 'שבת'], enabled: settings.eventCategories.specialDays },
+                { keywords: ['rosh chodesh', 'ראש חודש', 'rosh hodesh'], enabled: settings.eventCategories.holidays },  // שינוי לקטגוריית חגים
+                { keywords: ['tu bishvat', 'טו בשבט'], enabled: settings.eventCategories.holidays },
+                { keywords: ['family day', 'יום המשפחה'], enabled: settings.eventCategories.specialDays }
+            ];
+
+            // בדיקת מיפויים מיוחדים
+            for (const mapping of specialMappings) {
+                if (mapping.keywords.some(keyword => desc.includes(keyword) || hebrewDesc.includes(keyword))) {
+                    console.log('נמצאה התאמה מיוחדת:', mapping, 'עם הגדרות:', settings.eventCategories);
+                    return mapping.enabled;
+                }
+            }
+
+            // בדיקת קטגוריות סטנדרטיות
+            const categoryMappings = {
+                'parashat': settings.eventCategories.weeklyPortion,
+                'major_holiday': settings.eventCategories.holidays,
+                'minor_holiday': settings.eventCategories.holidays,
+                'holiday': settings.eventCategories.holidays,
+                'rosh_chodesh': settings.eventCategories.holidays,  // שינוי לקטגוריית חגים
+                'roshchodesh': settings.eventCategories.holidays    // שינוי לקטגוריית חגים
+            };
+
+            // בדיקה אם לפחות אחת מהקטגוריות של האירוע מופעלת
+            const hasEnabledCategory = categories.some(category => categoryMappings[category]);
+            console.log('תוצאת בדיקת קטגוריות:', hasEnabledCategory, 'עבור קטגוריות:', categories);
+            return hasEnabledCategory;
+        });
+
+        console.log('אירועים מסוננים:', filteredEvents.map(e => e.render('he')));
+        return filteredEvents;
+    } catch (error) {
+        console.error('שגיאה בטעינת אירועים:', error);
+        return [];
     }
 }

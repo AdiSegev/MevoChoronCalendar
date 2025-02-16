@@ -230,7 +230,7 @@ header {
 }
 
 #daysGrid .day.selected-day {
-    background-color: var(--theme-accent) !important;
+    background-color: var(--theme-color) !important;
     color: white !important;
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -242,7 +242,8 @@ header {
 }
 
 #daysGrid .day:not(.outside-month):hover:not(.current-day):not(.selected-day) {
-    background-color: var(--theme-accent) !important;
+    background-color: var(--theme-color) !important;
+    opacity: 0.8;
     color: white !important;
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -262,17 +263,6 @@ header {
     height: 6px;
     background-color: var(--theme-color);
     border-radius: 50%;
-}
-
-.date-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    gap: 5px;
-    z-index: 2;
-    pointer-events: none;
 }
 
 .primary-date {
@@ -1538,4 +1528,104 @@ input:checked + .slider:before {
     text-align: center;
     width: 100%;
     margin: 0;
+}
+
+.day {
+    position: relative;
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 5px !important;
+    min-height: 80px;
+}
+
+.date-container {
+    position: relative;
+    flex: 1;  /* תפיסת כל הגובה הזמין */
+}
+
+.primary-date {
+    font-size: 1.5em;
+    font-weight: bold;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2;
+}
+
+.secondary-date {
+    font-size: calc(var(--base-font-size) * 0.7);
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    color: var(--text-color);
+    opacity: 0.8;
+    z-index: 1;
+}
+
+.events-container {
+    position: absolute;
+    bottom: 2px;
+    left: 2px;
+    right: 2px;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    overflow-y: auto;
+    padding: 2px;
+    max-height: 35%;
+}
+
+.event-text {
+    font-size: 0.75em;
+    padding: 1px 3px;
+    border-radius: 3px;
+    color: var(--theme-color);
+    background-color: color-mix(in srgb, var(--theme-color) 10%, transparent);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    direction: rtl;
+    text-align: center;
+    line-height: 1.2;
+}
+
+/* כאשר יש יותר מאירוע אחד */
+.events-container:has(.event-text:nth-child(2)) .event-text {
+    font-size: 0.65em;  /* הקטנת הגודל */
+    padding: 0px 2px;
+    line-height: 1.1;  /* הקטנת המרווח בין השורות */
+}
+
+/* כאשר יש יותר משני אירועים */
+.events-container:has(.event-text:nth-child(3)) .event-text {
+    font-size: 0.6em;  /* הקטנה נוספת */
+    padding: 0px 2px;
+    line-height: 1;
+}
+
+/* הוספת אנימציה בעת hover */
+.event-text:hover {
+    white-space: normal;
+    overflow: visible;
+    background-color: var(--theme-color);
+    color: white;
+    position: relative;
+    z-index: 10;
+    font-size: 0.75em !important;  /* החזרת הגודל המקורי בהובר */
+    padding: 1px 3px !important;
+    line-height: 1.2 !important;
+}
+
+#daysGrid .day.current-day:not(.outside-month) .event-text,
+#daysGrid .day.selected-day:not(.outside-month) .event-text {
+    background-color: rgba(255, 255, 255, 0.3);  /* רקע לבן שקוף */
+    color: white;  /* צבע טקסט לבן */
+    text-shadow: 0 0 2px rgba(0, 0, 0, 0.5);  /* הוספת צל לטקסט להבלטה */
+}
+
+#daysGrid .day.current-day:not(.outside-month) .event-text:hover,
+#daysGrid .day.selected-day:not(.outside-month) .event-text:hover {
+    background-color: rgba(255, 255, 255, 0.4);  /* רקע לבן יותר שקוף בהובר */
+    text-shadow: 0 0 3px rgba(0, 0, 0, 0.7);  /* צל חזק יותר בהובר */
 }
