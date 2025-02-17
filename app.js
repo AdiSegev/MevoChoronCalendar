@@ -749,18 +749,8 @@ function renderCalendar() {
         if (isHebrewDisplay) {
             const hebDate = new HDate(selectedDate);
             monthEvents = getAllMonthEvents(hebDate.getFullYear(), hebDate.getMonth(), true);
-            console.log('אירועים בחודש העברי:', hebDate.getMonthName('he'), hebDate.getFullYear());
         } else {
             monthEvents = getAllMonthEvents(selectedDate.getFullYear(), selectedDate.getMonth(), false);
-            console.log('אירועים בחודש הלועזי:', selectedDate.toLocaleString('he', { month: 'long' }), selectedDate.getFullYear());
-        }
-
-        // הדפסת האירועים לפי תאריך
-        for (const [day, events] of monthEvents) {
-            console.log(`אירועים ליום ${day}:`);
-            events.forEach(event => {
-                console.log(`- ${event.render('he')}`);
-            });
         }
 
         // ניקוי הלוח הקיים
@@ -1422,54 +1412,120 @@ function convertNumberToHebrewYear(year) {
 
 // סינון זמנים לפי הגדרות המשתמש
 function filterTimesBySettings(dayTimes, date) {
-    const settings = loadSettings();
+    const settings = loadTimesSettings();
     const filteredTimes = {};
+    
+    // בדיקה האם להשתמש בשעון קיץ
+    const shouldUseDST = settings.autoTimeZone && isDaylightSavingTime(date);
+    
+    // פונקציה להוספת שעה אם נדרש
+    const adjustTime = (timeStr) => {
+        if (!timeStr) return timeStr;
+        
+        // בדיקה האם להשתמש בשעון קיץ עבור השעה הספציפית
+        const shouldUseDST = settings.autoTimeZone && isDaylightSavingTime(date, timeStr);
+        if (!shouldUseDST) return timeStr;
+        
+        const [hours, minutes] = timeStr.split(':').map(Number);
+        const adjustedHours = (hours + 1) % 24;
+        return `${adjustedHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+    };
 
     // עלות השחר - בדיקת הגדרה מדויקת
-    filteredTimes.dawn = settings.dawnType === '90' ? dayTimes.dawn90 : dayTimes.dawn72;
+    filteredTimes.dawn = adjustTime(settings.dawnType === '90' ? dayTimes.dawn90 : dayTimes.dawn72);
 
     // זמני ק"ש ותפילה
-    filteredTimes.shemaGra = dayTimes.shemaGra;
-    filteredTimes.tefilaGra = dayTimes.tefilaGra;
+    filteredTimes.shemaGra = adjustTime(dayTimes.shemaGra);
+    filteredTimes.tefilaGra = adjustTime(dayTimes.tefilaGra);
 
     // זמני מג"א
-    filteredTimes.shemaMga = settings.dawnType === '90' ? dayTimes.shemaMga90 : dayTimes.shemaMga72;
-    filteredTimes.tefilaMga = settings.dawnType === '90' ? dayTimes.tefilaMga90 : dayTimes.tefilaMga72;
+    filteredTimes.shemaMga = adjustTime(settings.dawnType === '90' ? dayTimes.shemaMga90 : dayTimes.shemaMga72);
+    filteredTimes.tefilaMga = adjustTime(settings.dawnType === '90' ? dayTimes.tefilaMga90 : dayTimes.tefilaMga72);
 
     // צאת הכוכבים - בדיקת הגדרה מדויקת
     switch (settings.tzeitType) {
         case '22.5':
-            filteredTimes.tzeit = dayTimes.tzeit2;
+            filteredTimes.tzeit = adjustTime(dayTimes.tzeit2);
             break;
         case '24':
-            filteredTimes.tzeit = dayTimes.tzeit1;
+            filteredTimes.tzeit = adjustTime(dayTimes.tzeit1);
             break;
         default: // '14' או כל ערך אחר
-            filteredTimes.tzeit = dayTimes.tzeit3;
+            filteredTimes.tzeit = adjustTime(dayTimes.tzeit3);
     }
 
     // מוצאי שבת - בדיקת הגדרה מדויקת
     if (date.getDay() === 6) { // שבת
-        filteredTimes.shabbatEnd = settings.shabbatEndType === 'hazon'
+        filteredTimes.shabbatEnd = adjustTime(settings.shabbatEndType === 'hazon'
             ? dayTimes.hazon40
-            : dayTimes.shabbatEnd;
+            : dayTimes.shabbatEnd);
     }
 
     // זמנים קבועים
-    filteredTimes.sunrise = dayTimes.sunrise;
-    filteredTimes.sunset = dayTimes.sunset;
-    filteredTimes.chatzot = dayTimes.chatzot;
-    filteredTimes.minchaGedola = dayTimes.minchaGedola;
-    filteredTimes.minchaKetana = dayTimes.minchaKetana;
-    filteredTimes.plag = dayTimes.plag;
-    filteredTimes.talitTefilin = dayTimes.talitTefilin;
+    filteredTimes.sunrise = adjustTime(dayTimes.sunrise);
+    filteredTimes.sunset = adjustTime(dayTimes.sunset);
+    filteredTimes.chatzot = adjustTime(dayTimes.chatzot);
+    filteredTimes.minchaGedola = adjustTime(dayTimes.minchaGedola);
+    filteredTimes.minchaKetana = adjustTime(dayTimes.minchaKetana);
+    filteredTimes.plag = adjustTime(dayTimes.plag);
+    filteredTimes.talitTefilin = adjustTime(dayTimes.talitTefilin);
 
     // זמני ערב שבת
     if (date.getDay() === 5) { // יום שישי
-        filteredTimes.candlelighting = dayTimes.candlelighting;
+        filteredTimes.candlelighting = adjustTime(dayTimes.candlelighting);
     }
 
     return filteredTimes;
+}
+
+function isDaylightSavingTime(date, timeStr) {
+    // המרת השעה מהמחרוזת למספרים
+    const [hours, minutes] = (timeStr || "00:00").split(':').map(Number);
+    
+    // יצירת תאריך חדש עם השעה הספציפית
+    const dateWithTime = new Date(date);
+    dateWithTime.setHours(hours, minutes, 0, 0);
+    
+    const year = date.getFullYear();
+    
+    // מציאת יום שישי האחרון של מרץ
+    const marchLastDay = new Date(year, 2, 31);
+    while (marchLastDay.getDay() !== 5) { // 5 = יום שישי
+        marchLastDay.setDate(marchLastDay.getDate() - 1);
+    }
+    marchLastDay.setHours(2, 0, 0, 0);
+    
+    // מציאת יום ראשון האחרון של אוקטובר
+    const octoberLastDay = new Date(year, 9, 31);
+    while (octoberLastDay.getDay() !== 0) { // 0 = יום ראשון
+        octoberLastDay.setDate(octoberLastDay.getDate() - 1);
+    }
+    octoberLastDay.setHours(2, 0, 0, 0);
+
+    // בדיקה האם התאריך הנוכחי הוא יום המעבר
+    const isTransitionDay = (
+        // יום שישי האחרון של מרץ
+        (dateWithTime.getFullYear() === marchLastDay.getFullYear() &&
+         dateWithTime.getMonth() === marchLastDay.getMonth() &&
+         dateWithTime.getDate() === marchLastDay.getDate()) ||
+        // יום ראשון האחרון של אוקטובר
+        (dateWithTime.getFullYear() === octoberLastDay.getFullYear() &&
+         dateWithTime.getMonth() === octoberLastDay.getMonth() &&
+         dateWithTime.getDate() === octoberLastDay.getDate())
+    );
+
+    if (isTransitionDay) {
+        if (dateWithTime.getDate() === marchLastDay.getDate()) {
+            // ביום שישי האחרון של מרץ, אחרי 2:00 זה כבר שעון קיץ
+            return hours >= 2;
+        } else if (dateWithTime.getDate() === octoberLastDay.getDate()) {
+            // ביום ראשון האחרון של אוקטובר, אחרי 2:00 זה כבר שעון חורף
+            return hours < 2;
+        }
+    }
+    
+    // לכל תאריך אחר - בדיקה רגילה
+    return dateWithTime > marchLastDay && dateWithTime < octoberLastDay;
 }
 
 // קריאת נתונים מקובץ Excel
@@ -2170,8 +2226,7 @@ function getAllMonthEvents(year, month, isHebrewMonth = false) {
 // פונקציה לקבלת האירועים המסוננים ליום מסוים
 function getFilteredEventsForDay(date) {
     const settings = loadSettings();
-    console.log('הגדרות נוכחיות:', settings);
-    
+        
     if (!settings.showEvents) {
         return [];
     }
@@ -2179,12 +2234,6 @@ function getFilteredEventsForDay(date) {
     try {
         const hebDate = new HDate(date);
         let events = HebrewCalendar.getHolidaysOnDate(hebDate, eventOptions);
-        
-        console.log('אירועים לתאריך:', hebDate.toString(), events ? events.map(e => ({
-            desc: e.getDesc(),
-            categories: e.getCategories(),
-            render: e.render('he')
-        })) : 'אין אירועים');
 
         if (!events) {
             events = [];
@@ -2221,13 +2270,6 @@ function getFilteredEventsForDay(date) {
             const categories = event.getCategories();
             const hebrewDesc = event.render('he').toLowerCase();
 
-            console.log('בודק אירוע:', {
-                desc,
-                hebrewDesc,
-                categories,
-                render: event.render('he')
-            });
-
             // מיפוי מיוחד לאירועים ספציפיים
             const specialMappings = [
                 { keywords: ['yom kippur katan', 'יום כיפור קטן'], enabled: settings.eventCategories.specialDays },
@@ -2240,7 +2282,6 @@ function getFilteredEventsForDay(date) {
             // בדיקת מיפויים מיוחדים
             for (const mapping of specialMappings) {
                 if (mapping.keywords.some(keyword => desc.includes(keyword) || hebrewDesc.includes(keyword))) {
-                    console.log('נמצאה התאמה מיוחדת:', mapping, 'עם הגדרות:', settings.eventCategories);
                     return mapping.enabled;
                 }
             }
@@ -2257,11 +2298,9 @@ function getFilteredEventsForDay(date) {
 
             // בדיקה אם לפחות אחת מהקטגוריות של האירוע מופעלת
             const hasEnabledCategory = categories.some(category => categoryMappings[category]);
-            console.log('תוצאת בדיקת קטגוריות:', hasEnabledCategory, 'עבור קטגוריות:', categories);
             return hasEnabledCategory;
         });
 
-        console.log('אירועים מסוננים:', filteredEvents.map(e => e.render('he')));
         return filteredEvents;
     } catch (error) {
         console.error('שגיאה בטעינת אירועים:', error);
