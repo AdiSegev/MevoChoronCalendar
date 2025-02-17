@@ -1679,7 +1679,7 @@ function isDaylightSavingTime(date, timeStr) {
 // קריאת נתונים מקובץ Excel
 async function loadTimesData() {
     try {
-        const XLSX = await import('https://cdn.sheetjs.com/xlsx-0.19.3/package/xlsx.mjs');
+        const XLSX = window.XLSX;
         const response = await fetch('tables/tables.xlsx');
         const data = new Uint8Array(await response.arrayBuffer());
         const workbook = XLSX.read(data, { type: 'array' });
@@ -1788,7 +1788,7 @@ class TimesManager {
     // טעינת הנתונים מקובץ Excel
     async initialize() {
         try {
-            const XLSX = await import('https://cdn.sheetjs.com/xlsx-0.19.3/package/xlsx.mjs');
+            const XLSX = window.XLSX;
             const response = await fetch('tables/tables.xlsx');
             const data = new Uint8Array(await response.arrayBuffer());
             const workbook = XLSX.read(data, { type: 'array' });
