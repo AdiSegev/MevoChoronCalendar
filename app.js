@@ -595,26 +595,6 @@ function getHebrewMonthName(month, year) {
     return monthArray[month - 1] || '';
 }
 
-// טעינת הגדרות מהאחסון המקומי
-// function loadSettings() {
-//     const defaultSettings = {
-//         fontSize: 'medium',
-//         themeColor: 'blue',
-//         showEvents: true,
-//         dawnType: '72',           // '72' או '90' דקות
-//         tzeitType: '14',          // '14', '22.5', או '24' דקות
-//         shabbatEndType: 'regular' // 'regular' או 'hazon'
-//     };
-
-//     try {
-//         const savedSettings = localStorage.getItem('settings');
-//         return savedSettings ? JSON.parse(savedSettings) : defaultSettings;
-//     } catch (error) {
-//         console.error('Error loading settings:', error);
-//         return defaultSettings;
-//     }
-// }
-
 // שמירת הגדרות באחסון המקומי
 function saveSettings(input) {
     // שמירת הגדרות תצוגה בנפרד
@@ -1168,8 +1148,6 @@ function setupEventListeners() {
     const nextYearBtn = document.getElementById('nextYear');
     const todayBtn = document.getElementById('todayBtn');
     const toggleBtn = document.getElementById('toggleCalendar');
-    const settingsBtn = document.getElementById('settingsBtn');
-    const settingsModal = document.getElementById('settingsModal');
 
     // כפתורי ניווט חודשים
     if (prevMonthBtn) {
@@ -1333,16 +1311,6 @@ function setupEventListeners() {
         }
     });
 
-    // כפתור הגדרות
-    const settingsCloseBtn = settingsModal ? settingsModal.querySelector('.close') : null;
-
-    if (settingsBtn && settingsModal && settingsCloseBtn) {
-        settingsBtn.addEventListener('click', showSettingsModal);
-        settingsCloseBtn.addEventListener('click', hideSettingsModal);
-        // console.log('Settings button event listener added');
-    } else {
-        console.error('Settings button not found');
-    }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -1469,19 +1437,6 @@ function setupEventsModalEventListeners() {
     }
 }
 
-function showSettingsModal() {
-    const settingsModal = document.getElementById('settingsModal');
-    if (settingsModal) {
-        settingsModal.classList.add('active');
-    }
-}
-
-function hideSettingsModal() {
-    const settingsModal = document.getElementById('settingsModal');
-    if (settingsModal) {
-        settingsModal.classList.remove('active');
-    }
-}
 
 function showDisplayModal() {
     const displayModal = document.getElementById('displayModal');

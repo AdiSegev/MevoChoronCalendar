@@ -16,8 +16,6 @@
                 <div class="header-buttons">
                     <button id="toggleCalendar" class="control-btn">לועזי עברי</button>
                     <button id="todayBtn" class="control-btn">היום</button>
-                    <button id="settingsBtn" class="control-btn">הגדרות</button>
-                    <button id="exportBtn" class="control-btn">📥 ייצוא</button>
                 </div>
             </div>
             <div class="month-controls">
@@ -297,76 +295,6 @@
             </div>
         </div>
 
-        <!-- Settings Modal -->
-        <div id="settingsModal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>הגדרות</h2>
-                    <span class="close">&times;</span>
-                </div>
-                <form id="settingsForm">
-
-                    <!-- הצגת אירועים -->
-                    <div class="settings-group">
-                        <label>
-                            <input type="checkbox" name="showEvents">
-                            הצג אירועים בלוח השנה
-                        </label>
-                    </div>
-                    <!-- גודל טקסט -->
-                    <div class="settings-group">
-                        <h3>גודל טקסט</h3>
-                        <select name="fontSize">
-                            <option value="small">קטן</option>
-                            <option value="medium">בינוני</option>
-                            <option value="large">גדול</option>
-                        </select>
-                    </div>
-
-                    <!-- צבע נושא -->
-                    <div class="settings-group">
-                        <h3>צבע נושא</h3>
-                        <select name="themeColor">
-                            <option value="blue">כחול</option>
-                            <option value="green">ירוק</option>
-                            <option value="orange">כתום</option>
-                        </select>
-                    </div>
-
-                    <!-- עלות השחר -->
-                    <div class="settings-group">
-                        <h3>עלות השחר</h3>
-                        <select name="dawnType">
-                            <option value="72">72 דקות לפני הנץ</option>
-                            <option value="90">90 דקות לפני הנץ</option>
-                        </select>
-                    </div>
-
-                    <!-- צאת הכוכבים -->
-                    <div class="settings-group">
-                        <h3>צאת הכוכבים</h3>
-                        <select name="tzeitType">
-                            <option value="14">14 דקות אחרי שקיעה</option>
-                            <option value="22.5">22.5 דקות אחרי שקיעה</option>
-                            <option value="24">24 דקות אחרי שקיעה</option>
-                        </select>
-                    </div>
-
-
-                    <!-- מוצאי שבת -->
-                    <div class="settings-group">
-                        <h3>מוצאי שבת</h3>
-                        <select name="shabbatEndType">
-                            <option value="regular">זמן רגיל</option>
-                            <option value="hazon">חזון איש</option>
-                        </select>
-                    </div>
-
-
-                    <button type="submit">שמור הגדרות</button>
-                </form>
-            </div>
-        </div>
         <!-- מודאל יצוא -->
         <div id="exportModal" class="modal">
             <div class="modal-content">
