@@ -319,6 +319,8 @@ header {
     inset: 0;
     background-color: rgba(0, 0, 0, 0.5);
     z-index: 1001;
+    overflow-y: auto;
+    padding: 20px;
 }
 
 .modal.active {
@@ -373,6 +375,61 @@ header {
 
 .close:hover {
     opacity: 1;
+}
+
+/* Settings Modals */
+.settings-modal {
+    display: none;
+}
+
+.settings-modal.active {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Day Modal */
+#dayModal {
+    display: none;
+}
+
+#dayModal.active {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+}
+
+/* About Modal */
+#aboutModal {
+    display: none;
+}
+
+#aboutModal.active {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Times Modal */
+#timesModal {
+    display: none;
+}
+
+#timesModal.active {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Export Modal */
+#exportModal {
+    display: none;
+}
+
+#exportModal.active {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
 }
 
 .modal-body {
@@ -1123,8 +1180,7 @@ input:checked + .slider:before {
 }
 
 .overlay.active {
-    opacity: 1;
-    visibility: visible;
+    display: block;
 }
 
 /* Settings Modals */

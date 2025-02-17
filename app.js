@@ -1351,30 +1351,121 @@ document.addEventListener('DOMContentLoaded', () => {
     setupEventsModalEventListeners();
     setupDisplayModalEventListeners(); // הוספת מאזיני אירועים למודאל התצוגה
     setupTimesModalEventListeners();
+    setupExportModalEventListeners();
+    setupHalachaModalEventListeners();
+    setupAboutModalEventListeners();
     setupSidebarEventListeners();
     initCalendar();
 });
 
-function setupDisplayModalEventListeners() {
-    console.log('setupDisplayModalEventListeners called');
-    const displayModal = document.getElementById('displayModal');
-    const displayForm = document.getElementById('displaySettingsForm');
-    const displayCloseBtn = displayModal.querySelector('.close');
 
+function setupExportModalEventListeners() {
+    const exportModal = document.getElementById('exportModal');
+    const closeBtn = exportModal.querySelector('.close');
+    const exportExcelBtn = document.getElementById('exportExcelBtn');
 
-    if (displayModal && displayForm && displayCloseBtn) {
+    if (exportModal && closeBtn) {
+        closeBtn.addEventListener('click', hideExportModal);
 
-
-        displayCloseBtn.addEventListener('click', hideDisplayModal);
-
-        // Close display modal when clicking outside
-        document.addEventListener('click', (event) => {
-            if (event.target === displayModal) {
-                hideDisplayModal();
+        // סגירת המודאל בלחיצה על הרקע
+        exportModal.addEventListener('click', (event) => {
+            if (event.target === exportModal) {
+                hideExportModal();
             }
         });
-    } else {
-        console.error('One or more display modal elements not found');
+
+        // הוספת מאזין לכפתור הייצוא
+        if (exportExcelBtn) {
+            exportExcelBtn.addEventListener('click', () => {
+                downloadExistingExcel();
+                hideExportModal(); // סגירת המודאל לאחר התחלת ההורדה
+            });
+        }
+    }
+}
+
+
+function setupHalachaModalEventListeners() {
+    const halachaModal = document.getElementById('halachaModal');
+    const closeBtn = halachaModal.querySelector('.close');
+
+    if (halachaModal && closeBtn) {
+        // סגירת המודאל בלחיצה על כפתור הסגירה
+        closeBtn.addEventListener('click', hideHalachaModal);
+
+        // סגירת המודאל בלחיצה על הרקע
+        halachaModal.addEventListener('click', (event) => {
+            if (event.target === halachaModal) {
+                hideHalachaModal();
+            }
+        });
+    }
+}
+
+function setupAboutModalEventListeners() {
+    const aboutModal = document.getElementById('aboutModal');
+    const closeBtn = aboutModal.querySelector('.close');
+
+    if (aboutModal && closeBtn) {
+        closeBtn.addEventListener('click', hideAboutModal);
+
+        // סגירת המודאל בלחיצה על הרקע
+        aboutModal.addEventListener('click', (event) => {
+            if (event.target === aboutModal) {
+                hideAboutModal();
+            }
+        });
+    }
+}
+
+// פונקציה לשמירת הגדרות אירועים
+function setupEventsModalEventListeners() {
+    const eventsModal = document.getElementById('eventsModal');
+    const eventsForm = document.getElementById('eventsSettingsForm');
+    const eventsCloseBtn = eventsModal.querySelector('.close');
+
+    if (eventsModal && eventsForm && eventsCloseBtn) {
+           // סגירת המודאל בלחיצה על הרקע
+           eventsModal.addEventListener('click', (event) => {
+            if (event.target === eventsModal) {
+                hideEventsModal();
+            }
+        });
+
+        // טעינת ההגדרות הקיימות בעת פתיחת המודאל
+        eventsModal.addEventListener('modal-show', () => {
+            const settings = loadSettings();
+            eventsForm.querySelector('[name="eventCategories.holidays"]').checked = settings.eventCategories.holidays;
+            eventsForm.querySelector('[name="eventCategories.weeklyPortion"]').checked = settings.eventCategories.weeklyPortion;
+            eventsForm.querySelector('[name="eventCategories.specialDays"]').checked = settings.eventCategories.specialDays;
+        });
+
+        // הוספת מאזין לשמירת הטופס
+        eventsForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const formData = new FormData(eventsForm);
+
+            // המרת הגדרות הטופס למבנה הנכון
+            const eventCategoriesSettings = {
+                holidays: formData.get('eventCategories.holidays') === 'on',
+                weeklyPortion: formData.get('eventCategories.weeklyPortion') === 'on',
+                specialDays: formData.get('eventCategories.specialDays') === 'on'
+            };
+
+            // שמירת ההגדרות
+            localStorage.setItem('event-categories-settings', JSON.stringify(eventCategoriesSettings));
+
+            // רענון התצוגה מיד
+            renderCalendar();
+
+            // סגירת המודאל
+            hideEventsModal();
+
+            // הצגת הודעת אישור
+            showToast('ההגדרות נשמרו בהצלחה');
+        });
+
+        eventsCloseBtn.addEventListener('click', hideEventsModal);
     }
 }
 
@@ -1394,8 +1485,13 @@ function hideSettingsModal() {
 
 function showDisplayModal() {
     const displayModal = document.getElementById('displayModal');
+    const overlay = document.getElementById('overlay');
+    
     if (displayModal) {
         displayModal.classList.add('active');
+        if (overlay) {
+            overlay.classList.add('active');
+        }
     }
 }
 
@@ -1403,6 +1499,103 @@ function hideDisplayModal() {
     const displayModal = document.getElementById('displayModal');
     if (displayModal) {
         displayModal.classList.remove('active');
+    }
+}
+
+// מודאל הלכה
+function showHalachaModal() {
+    const halachaModal = document.getElementById('halachaModal');
+    const overlay = document.getElementById('overlay');
+    
+    if (halachaModal) {
+        halachaModal.classList.add('active');
+        if (overlay) {
+            overlay.classList.add('active');
+        }
+    }
+}
+
+function hideHalachaModal() {
+    const halachaModal = document.getElementById('halachaModal');
+    const overlay = document.getElementById('overlay');
+    
+    if (halachaModal) {
+        halachaModal.classList.remove('active');
+        if (overlay) {
+            overlay.classList.remove('active');
+        }
+    }
+}
+
+// מודאל אודות
+function showAboutModal() {
+    const aboutModal = document.getElementById('aboutModal');
+    const overlay = document.getElementById('overlay');
+    
+    if (aboutModal) {
+        aboutModal.classList.add('active');
+        if (overlay) {
+            overlay.classList.add('active');
+        }
+    }
+}
+
+function hideAboutModal() {
+    const aboutModal = document.getElementById('aboutModal');
+    const overlay = document.getElementById('overlay');
+    
+    if (aboutModal) {
+        aboutModal.classList.remove('active');
+        if (overlay) {
+            overlay.classList.remove('active');
+        }
+    }
+}
+
+// מודאל זמנים
+function showTimesModal() {
+    const eventsModal = document.getElementById('timesModal');
+    const overlay = document.getElementById('overlay');
+
+    if (eventsModal) {
+        // הפעלת אירוע show לפני הצגת המודאל
+        const showEvent = new CustomEvent('modal-show');
+        eventsModal.dispatchEvent(showEvent);
+
+        // הצגת המודאל וה-overlay
+        eventsModal.classList.add('active');
+        if (overlay) {
+            overlay.classList.add('active');
+        }
+    }
+}
+
+function hideTimesModal() {
+    document.getElementById('timesModal').classList.remove('active');
+    document.getElementById('overlay').style.display = 'none';
+}
+
+function showExportModal() {
+    const exportModal = document.getElementById('exportModal');
+    const overlay = document.getElementById('overlay');
+    
+    if (exportModal) {
+        exportModal.classList.add('active');
+        if (overlay) {
+            overlay.classList.add('active');
+        }
+    }
+}
+
+function hideExportModal() {
+    const exportModal = document.getElementById('exportModal');
+    const overlay = document.getElementById('overlay');
+    
+    if (exportModal) {
+        exportModal.classList.remove('active');
+        if (overlay) {
+            overlay.classList.remove('active');
+        }
     }
 }
 
@@ -1753,57 +1946,16 @@ function loadSettings() {
     }
 }
 
-// פונקציה לשמירת הגדרות אירועים
-function setupEventsModalEventListeners() {
-    const eventsModal = document.getElementById('eventsModal');
-    const eventsForm = document.getElementById('eventsSettingsForm');
-    const eventsCloseBtn = eventsModal.querySelector('.close');
-
-    if (eventsModal && eventsForm && eventsCloseBtn) {
-        // טעינת ההגדרות הקיימות בעת פתיחת המודאל
-        eventsModal.addEventListener('modal-show', () => {
-            const settings = loadSettings();
-            eventsForm.querySelector('[name="eventCategories.holidays"]').checked = settings.eventCategories.holidays;
-            eventsForm.querySelector('[name="eventCategories.weeklyPortion"]').checked = settings.eventCategories.weeklyPortion;
-            eventsForm.querySelector('[name="eventCategories.specialDays"]').checked = settings.eventCategories.specialDays;
-        });
-
-        // הוספת מאזין לשמירת הטופס
-        eventsForm.addEventListener('submit', (event) => {
-            event.preventDefault();
-            const formData = new FormData(eventsForm);
-
-            // המרת הגדרות הטופס למבנה הנכון
-            const eventCategoriesSettings = {
-                holidays: formData.get('eventCategories.holidays') === 'on',
-                weeklyPortion: formData.get('eventCategories.weeklyPortion') === 'on',
-                specialDays: formData.get('eventCategories.specialDays') === 'on'
-            };
-
-            // שמירת ההגדרות
-            localStorage.setItem('event-categories-settings', JSON.stringify(eventCategoriesSettings));
-
-            // רענון התצוגה מיד
-            renderCalendar();
-
-            // סגירת המודאל
-            hideEventsModal();
-
-            // הצגת הודעת אישור
-            showToast('ההגדרות נשמרו בהצלחה');
-        });
-
-        eventsCloseBtn.addEventListener('click', hideEventsModal);
-    }
-}
-
-
-
 
 function hideEventsModal() {
     const eventsModal = document.getElementById('eventsModal');
+    const overlay = document.getElementById('overlay');
+    
     if (eventsModal) {
         eventsModal.classList.remove('active');
+        if (overlay) {
+            overlay.classList.remove('active');
+        }
     }
 }
 
@@ -1888,7 +2040,7 @@ function setupDisplaySettings() {
 
             if (saveSettings(newSettings)) {
                 applySettings();
-                closeModal(displayModal);
+                hideDisplayModal;
             }
         });
 
@@ -1913,7 +2065,7 @@ function setupDisplaySettings() {
             overlay.addEventListener('click', (event) => {
                 // בדיקה שהלחיצה הייתה על האוברלי עצמו ולא על תוכן המודאל
                 if (event.target === overlay) {
-                    closeModal(displayModal);
+                    hideDisplayModal();
                 }
             });
         }
@@ -1922,62 +2074,89 @@ function setupDisplaySettings() {
         const closeButton = displayModal.querySelector('.close');
         if (closeButton) {
             closeButton.addEventListener('click', () => {
-                closeModal(displayModal);
+                hideDisplayModal();
             });
         }
     }
 }
 
 function setupSidebarEventListeners() {
-    console.log('setupSidebarEventListeners called');
+    // 1. הגדרת המשתנים הדרושים
     const hamburgerBtn = document.getElementById('hamburgerBtn');
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('overlay');
+    const sidebarItems = document.querySelectorAll('.sidebar-item');
+    const closeSidebarBtn = document.querySelector('.close-sidebar');
 
-    console.log('hamburgerBtn:', hamburgerBtn);
-    console.log('sidebar:', sidebar);
-    console.log('overlay:', overlay);
-
+    // 2. טיפול בכפתור ההמבורגר ובסרגל הצד
     if (hamburgerBtn && sidebar && overlay) {
+        // פתיחת סרגל הצד
         hamburgerBtn.addEventListener('click', () => {
-            console.log('Hamburger button clicked');
             sidebar.classList.toggle('active');
-            overlay.classList.toggle('active');
+            overlay.style.display = sidebar.classList.contains('active') ? 'block' : 'none';
         });
 
-        overlay.addEventListener('click', () => {
+        // סגירת סרגל הצד
+        closeSidebarBtn.addEventListener('click', () => {
             sidebar.classList.remove('active');
-            overlay.classList.remove('active');
+            overlay.style.display = 'none';
         });
 
-        const closeSidebarBtn = sidebar.querySelector('.close-sidebar');
-        if (closeSidebarBtn) {
-            closeSidebarBtn.addEventListener('click', () => {
-                sidebar.classList.remove('active');
-                overlay.classList.remove('active');
-            });
-        }
+    }
 
-        const sidebarItems = sidebar.querySelectorAll('.sidebar-item');
-        sidebarItems.forEach(item => {
-            item.addEventListener('click', () => {
-                const modalId = item.getAttribute('data-modal');
+    // 3. טיפול בפריטי התפריט
+    sidebarItems.forEach(item => {
+        item.addEventListener('click', () => {
+            const modalId = item.getAttribute('data-modal');
+            if (modalId) {
                 const modal = document.getElementById(modalId);
-
-                sidebar.classList.remove('active');
-                overlay.classList.remove('active');
-
                 if (modal) {
-                    if (modalId === 'eventsModal') {
-                        showEventsModal();
-                    } else {
-                        modal.classList.add('active');
+                    // פתיחת המודאל המתאים
+                    switch(modalId) {
+                        case 'displayModal': showDisplayModal(); break;
+                        case 'eventsModal': showEventsModal(); break;
+                        case 'timesModal': showTimesModal(); break;
+                        case 'exportModal': showExportModal(); break;
+                        case 'halachaModal': showHalachaModal(); break;
+                        case 'aboutModal': showAboutModal(); break;
                     }
+                    // סגירת סרגל הצד לאחר בחירת פריט
+                    sidebar.classList.remove('active');
                 }
-            });
+            }
+        });
+    });
+
+    // 4. טיפול בכפתורי הסגירה של המודאלים
+    document.querySelector('#exportModal .close').addEventListener('click', hideExportModal);
+    document.querySelector('#displayModal .close').addEventListener('click', hideDisplayModal);
+    document.querySelector('#eventsModal .close').addEventListener('click', hideEventsModal);
+    document.querySelector('#timesModal .close').addEventListener('click', hideTimesModal);
+    document.querySelector('#halachaModal .close').addEventListener('click', hideHalachaModal);
+    document.querySelector('#aboutModal .close').addEventListener('click', hideAboutModal);
+}
+
+
+function setupDisplayModalEventListeners() {
+    console.log('setupDisplayModalEventListeners called');
+    const displayModal = document.getElementById('displayModal');
+    const displayForm = document.getElementById('displaySettingsForm');
+    const displayCloseBtn = displayModal.querySelector('.close');
+
+
+    if (displayModal && displayForm && displayCloseBtn) {
+
+
+        displayCloseBtn.addEventListener('click', hideDisplayModal);
+
+        // Close display modal when clicking outside
+        document.addEventListener('click', (event) => {
+            if (event.target === displayModal) {
+                hideDisplayModal();
+            }
         });
     } else {
-        console.error('One or more elements not found');
+        console.error('One or more display modal elements not found');
     }
 }
 
@@ -1989,6 +2168,11 @@ function setupTimesModalEventListeners() {
     const timesSaveBtn = timesModal.querySelector('.save-button');
 
     if (timesModal && timesForm && timesCloseBtn && timesSaveBtn) {
+        timesModal.addEventListener('click', (event) => {
+            if (event.target === timesModal) {
+                hideTimesModal();
+            }
+        });
         // טעינת הגדרות זמני היום למודאל
         const timesSettings = loadTimesSettings();
 
@@ -2005,8 +2189,9 @@ function setupTimesModalEventListeners() {
             hideTimesModal();
         });
 
-        timesCloseBtn.addEventListener('click', hideTimesModal);
-
+        timesCloseBtn.addEventListener('click', () => {
+            hideTimesModal();
+        });
         // Close times modal when clicking outside
         document.addEventListener('click', (event) => {
             if (event.target === timesModal) {
@@ -2069,13 +2254,6 @@ function applyTimesSettings(settings = loadTimesSettings()) {
     console.log('Applying times settings:', settings);
     // דוגמה: עדכון תצוגת זמנים
     // document.documentElement.style.setProperty('--dawn-type', settings.dawnType);
-}
-
-function hideTimesModal() {
-    const timesModal = document.getElementById('timesModal');
-    if (timesModal) {
-        timesModal.classList.remove('active');
-    }
 }
 
 // פונקציה להדפסת כל האירועים בחודש
