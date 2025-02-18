@@ -14,6 +14,12 @@ let currentHebrewYear = 5785; // Initialize with current Hebrew year
 // הוספת המשתנים כגלובליים
 window.excelTableHeaders = [];
 
+const eventEmojis = {
+    'holidays': '🕎',
+    'parasha': '📖',
+    'special_days': '✡️'
+};
+
 // Function to update current Hebrew year
 function updateCurrentHebrewYear() {
     const hebDate = new HDate(selectedDate);
@@ -942,14 +948,25 @@ function createDayElement(date, container, isOutsideMonth) {
         if (events.length > 0) {
             const eventsContainer = document.createElement('div');
             eventsContainer.classList.add('events-container');
-            
+
             events.forEach(event => {
                 const eventElement = document.createElement('div');
                 eventElement.classList.add('event-text');
-                eventElement.textContent = event.render('he');
+                // בדיקה אם זה מסך קטן (מובייל)
+                const isMobile = window.innerWidth <= 768;
+
+                if (isMobile) {
+                    // במובייל - הצגת emoji
+                    eventElement.textContent = getEventEmoji(event);
+                    eventElement.title = event.render('he'); // שמירת הטקסט המלא בכותרת
+                } else {
+                    // בדסקטופ - הצגת טקסט מלא
+                    eventElement.textContent = event.render('he');
+                }
                 eventsContainer.appendChild(eventElement);
+
             });
-            
+
             dayElement.appendChild(eventsContainer);
         }
     }
@@ -1393,8 +1410,8 @@ function setupEventsModalEventListeners() {
     const eventsCloseBtn = eventsModal.querySelector('.close');
 
     if (eventsModal && eventsForm && eventsCloseBtn) {
-           // סגירת המודאל בלחיצה על הרקע
-           eventsModal.addEventListener('click', (event) => {
+        // סגירת המודאל בלחיצה על הרקע
+        eventsModal.addEventListener('click', (event) => {
             if (event.target === eventsModal) {
                 hideEventsModal();
             }
@@ -1441,7 +1458,7 @@ function setupEventsModalEventListeners() {
 function showDisplayModal() {
     const displayModal = document.getElementById('displayModal');
     const overlay = document.getElementById('overlay');
-    
+
     if (displayModal) {
         displayModal.classList.add('active');
         if (overlay) {
@@ -1461,7 +1478,7 @@ function hideDisplayModal() {
 function showHalachaModal() {
     const halachaModal = document.getElementById('halachaModal');
     const overlay = document.getElementById('overlay');
-    
+
     if (halachaModal) {
         halachaModal.classList.add('active');
         if (overlay) {
@@ -1473,7 +1490,7 @@ function showHalachaModal() {
 function hideHalachaModal() {
     const halachaModal = document.getElementById('halachaModal');
     const overlay = document.getElementById('overlay');
-    
+
     if (halachaModal) {
         halachaModal.classList.remove('active');
         if (overlay) {
@@ -1486,7 +1503,7 @@ function hideHalachaModal() {
 function showAboutModal() {
     const aboutModal = document.getElementById('aboutModal');
     const overlay = document.getElementById('overlay');
-    
+
     if (aboutModal) {
         aboutModal.classList.add('active');
         if (overlay) {
@@ -1498,7 +1515,7 @@ function showAboutModal() {
 function hideAboutModal() {
     const aboutModal = document.getElementById('aboutModal');
     const overlay = document.getElementById('overlay');
-    
+
     if (aboutModal) {
         aboutModal.classList.remove('active');
         if (overlay) {
@@ -1533,7 +1550,7 @@ function hideTimesModal() {
 function showExportModal() {
     const exportModal = document.getElementById('exportModal');
     const overlay = document.getElementById('overlay');
-    
+
     if (exportModal) {
         exportModal.classList.add('active');
         if (overlay) {
@@ -1545,7 +1562,7 @@ function showExportModal() {
 function hideExportModal() {
     const exportModal = document.getElementById('exportModal');
     const overlay = document.getElementById('overlay');
-    
+
     if (exportModal) {
         exportModal.classList.remove('active');
         if (overlay) {
@@ -1562,18 +1579,18 @@ function convertNumberToHebrewYear(year) {
 function filterTimesBySettings(dayTimes, date) {
     const settings = loadTimesSettings();
     const filteredTimes = {};
-    
+
     // בדיקה האם להשתמש בשעון קיץ
     const shouldUseDST = settings.autoTimeZone && isDaylightSavingTime(date);
-    
+
     // פונקציה להוספת שעה אם נדרש
     const adjustTime = (timeStr) => {
         if (!timeStr) return timeStr;
-        
+
         // בדיקה האם להשתמש בשעון קיץ עבור השעה הספציפית
         const shouldUseDST = settings.autoTimeZone && isDaylightSavingTime(date, timeStr);
         if (!shouldUseDST) return timeStr;
-        
+
         const [hours, minutes] = timeStr.split(':').map(Number);
         const adjustedHours = (hours + 1) % 24;
         return `${adjustedHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
@@ -1629,20 +1646,20 @@ function filterTimesBySettings(dayTimes, date) {
 function isDaylightSavingTime(date, timeStr) {
     // המרת השעה מהמחרוזת למספרים
     const [hours, minutes] = (timeStr || "00:00").split(':').map(Number);
-    
+
     // יצירת תאריך חדש עם השעה הספציפית
     const dateWithTime = new Date(date);
     dateWithTime.setHours(hours, minutes, 0, 0);
-    
+
     const year = date.getFullYear();
-    
+
     // מציאת יום שישי האחרון של מרץ
     const marchLastDay = new Date(year, 2, 31);
     while (marchLastDay.getDay() !== 5) { // 5 = יום שישי
         marchLastDay.setDate(marchLastDay.getDate() - 1);
     }
     marchLastDay.setHours(2, 0, 0, 0);
-    
+
     // מציאת יום ראשון האחרון של אוקטובר
     const octoberLastDay = new Date(year, 9, 31);
     while (octoberLastDay.getDay() !== 0) { // 0 = יום ראשון
@@ -1654,12 +1671,12 @@ function isDaylightSavingTime(date, timeStr) {
     const isTransitionDay = (
         // יום שישי האחרון של מרץ
         (dateWithTime.getFullYear() === marchLastDay.getFullYear() &&
-         dateWithTime.getMonth() === marchLastDay.getMonth() &&
-         dateWithTime.getDate() === marchLastDay.getDate()) ||
+            dateWithTime.getMonth() === marchLastDay.getMonth() &&
+            dateWithTime.getDate() === marchLastDay.getDate()) ||
         // יום ראשון האחרון של אוקטובר
         (dateWithTime.getFullYear() === octoberLastDay.getFullYear() &&
-         dateWithTime.getMonth() === octoberLastDay.getMonth() &&
-         dateWithTime.getDate() === octoberLastDay.getDate())
+            dateWithTime.getMonth() === octoberLastDay.getMonth() &&
+            dateWithTime.getDate() === octoberLastDay.getDate())
     );
 
     if (isTransitionDay) {
@@ -1671,7 +1688,7 @@ function isDaylightSavingTime(date, timeStr) {
             return hours < 2;
         }
     }
-    
+
     // לכל תאריך אחר - בדיקה רגילה
     return dateWithTime > marchLastDay && dateWithTime < octoberLastDay;
 }
@@ -1905,7 +1922,7 @@ function loadSettings() {
 function hideEventsModal() {
     const eventsModal = document.getElementById('eventsModal');
     const overlay = document.getElementById('overlay');
-    
+
     if (eventsModal) {
         eventsModal.classList.remove('active');
         if (overlay) {
@@ -2067,7 +2084,7 @@ function setupSidebarEventListeners() {
                 const modal = document.getElementById(modalId);
                 if (modal) {
                     // פתיחת המודאל המתאים
-                    switch(modalId) {
+                    switch (modalId) {
                         case 'displayModal': showDisplayModal(); break;
                         case 'eventsModal': showEventsModal(); break;
                         case 'timesModal': showTimesModal(); break;
@@ -2359,7 +2376,7 @@ function getAllMonthEvents(year, month, isHebrewMonth = false) {
 // פונקציה לקבלת האירועים המסוננים ליום מסוים
 function getFilteredEventsForDay(date) {
     const settings = loadSettings();
-        
+
     if (!settings.showEvents) {
         return [];
     }
@@ -2384,9 +2401,9 @@ function getFilteredEventsForDay(date) {
 
                 const parashaEvent = events1.find(ev => {
                     return ev.getDate().toString() === hebDate.toString() &&
-                           ev.getDesc().startsWith("Parashat");
+                        ev.getDesc().startsWith("Parashat");
                 });
-                
+
                 if (parashaEvent) {
                     events.unshift(parashaEvent);
                 }
@@ -2439,4 +2456,26 @@ function getFilteredEventsForDay(date) {
         console.error('שגיאה בטעינת אירועים:', error);
         return [];
     }
+}
+
+function getEventCategory(event) {
+    const name = event.getDesc();
+
+    if (name.startsWith('Parashat')) {
+        return 'parasha';
+    }
+
+    if (name.startsWith('Shabbat') ||
+        name.includes('Yom Ha') ||
+        name.includes('Yom Yerushalayim')) {
+        return 'special_days';
+    }
+
+    // כל השאר הם ימים טובים
+    return 'holidays';
+}
+
+function getEventEmoji(event) {
+    const category = getEventCategory(event);
+    return eventEmojis[category];
 }

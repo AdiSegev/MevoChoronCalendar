@@ -1691,3 +1691,18 @@ input:checked + .slider:before {
     background-color: rgba(255, 255, 255, 0.4);  /* רקע לבן יותר שקוף בהובר */
     text-shadow: 0 0 3px rgba(0, 0, 0, 0.7);  /* צל חזק יותר בהובר */
 }
+@media screen and (max-width: 768px) {
+    .events-container {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        justify-content: center;
+        align-items: center;
+        gap: 2px;
+        max-height: 1.5em;
+    }
+
+    .event-text {
+        font-size: 0.9em;
+    }
+}
