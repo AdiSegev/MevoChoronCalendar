@@ -42,9 +42,9 @@
 </p>
 
 <h4>📚 ספריות עזר</h4>
-<p style="text-align: right;">
-• [Hebcal](https://github.com/hebcal/hebcal-js) 📆 - ספריית חישובי לוח שנה עברי<br>
-• XLSX 📊 - לקריאת נתוני זמנים
+<p dir="rtl">
+• ספריית חישובי לוח שנה עברי - [Hebcal](https://github.com/hebcal/hebcal-js) 📆<br>
+• לקריאת נתוני זמנים - XLSX 📊
 </p>
 
 <h4>📧 יצירת קשר</h4>
