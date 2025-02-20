@@ -41,11 +41,11 @@
 • התקנה כאפליקציה מקומית
 </p>
 
-<h4>📚 ספריות עזר</h4>
-<p>
-• <a href="https://github.com/hebcal/hebcal-js">Hebcal</a> 📆 - ספריית חישובי לוח שנה עברי<br>
+## 📚 ספריות עזר
+
+• [Hebcal](https://github.com/hebcal/hebcal-js) 📆 - ספריית חישובי לוח שנה עברי
+
 • XLSX 📊 - לקריאת נתוני זמנים
-</p>
 
 <h4>📧 יצירת קשר</h4>
 <p>
