@@ -49,7 +49,7 @@
 
 <h4>📧 יצירת קשר</h4>
 <p>
-להערות והארות ניתן לפנות ל-adisegev1@gmail.com
+להערות והארות ניתן לפנות ל-<a href="mailto:adisegev1@gmail.com">adisegev1@gmail.com</a>
 </p>
 
 </div>
