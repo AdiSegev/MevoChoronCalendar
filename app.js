@@ -1760,8 +1760,7 @@ async function downloadExistingExcel() {
         document.body.removeChild(link);
         URL.revokeObjectURL(link.href);
 
-        alert(`הקובץ ${fileName} הורד בהצלחה`);
-    } catch (error) {
+        } catch (error) {
         console.error('שגיאה בהורדת קובץ Excel:', error);
         alert('שגיאה בהורדת הקובץ', 3000);
     }
