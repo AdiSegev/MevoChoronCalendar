@@ -2065,15 +2065,20 @@ function setupSidebarEventListeners() {
         // פתיחת סרגל הצד
         hamburgerBtn.addEventListener('click', () => {
             sidebar.classList.toggle('active');
-            overlay.style.display = sidebar.classList.contains('active') ? 'block' : 'none';
+            overlay.classList.toggle('active');
         });
 
         // סגירת סרגל הצד
         closeSidebarBtn.addEventListener('click', () => {
             sidebar.classList.remove('active');
-            overlay.style.display = 'none';
+            overlay.classList.remove('active');
         });
 
+        // סגירת סרגל הצד בלחיצה על ה-overlay
+        overlay.addEventListener('click', () => {
+            sidebar.classList.remove('active');
+            overlay.classList.remove('active');
+        });
     }
 
     // 3. טיפול בפריטי התפריט

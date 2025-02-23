@@ -1176,10 +1176,13 @@ input:checked + .slider:before {
     z-index: 999;
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.3s;
+    display: none;
+    transition: opacity 0.3s, visibility 0.3s;
 }
 
 .overlay.active {
+    opacity: 1;
+    visibility: visible;
     display: block;
 }
 
@@ -1264,11 +1267,37 @@ input:checked + .slider:before {
 }
 
 .about-info {
-    line-height: 1.6;
+    padding: 1.5rem;
 }
 
-.about-info p {
+.about-section {
+    margin-bottom: 1.5rem;
+}
+
+.about-section:last-child {
+    margin-bottom: 0;
+}
+
+.about-section h3 {
+    color: var(--theme-color);
+    margin-bottom: 0.75rem;
+    font-size: 1.2rem;
+}
+
+.about-section p {
+    line-height: 1.6;
     margin-bottom: 0.5rem;
+}
+
+.contact-link {
+    color: var(--theme-color);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.contact-link:hover {
+    color: var(--theme-secondary);
+    text-decoration: underline;
 }
 
 /* Responsive Design */
