@@ -1740,6 +1740,7 @@ async function downloadExistingExcel() {
         const response = await fetch('tables/tables.xlsx');
 
         if (!response.ok) {
+            alert('Failed to fetch Excel file');
             throw new Error('Failed to fetch Excel file');
         }
 
@@ -1759,10 +1760,10 @@ async function downloadExistingExcel() {
         document.body.removeChild(link);
         URL.revokeObjectURL(link.href);
 
-        showToast(`הקובץ ${fileName} הורד בהצלחה`);
+        alert(`הקובץ ${fileName} הורד בהצלחה`);
     } catch (error) {
         console.error('שגיאה בהורדת קובץ Excel:', error);
-        showToast('שגיאה בהורדת הקובץ', 3000);
+        alert('שגיאה בהורדת הקובץ', 3000);
     }
 }
 
