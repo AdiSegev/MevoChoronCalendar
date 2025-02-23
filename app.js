@@ -1737,7 +1737,7 @@ if (typeof XLSX === 'undefined' && window.XLSX) {
 // פונקציה להורדת קובץ Excel קיים
 async function downloadExistingExcel() {
     try {
-        const response = await fetch('/tables/tables.xlsx');
+        const response = await fetch('tables/tables.xlsx');
 
         if (!response.ok) {
             throw new Error('Failed to fetch Excel file');
