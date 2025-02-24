@@ -282,18 +282,16 @@ header {
 }
 
 .secondary-date {
-    font-size: calc(var(--base-font-size) * 0.7);
+    font-size: calc(var(--base-font-size) * 0.6);
     position: absolute;
-    top: 2px;
-    right: 2px;
     color: var(--text-color);
     opacity: 0.8;
     direction: rtl;
     text-align: right;
     line-height: 1;
-    padding: 2px;
     z-index: 1;
 }
+
 
 .secondary-date .day-number {
     order: 1;
@@ -1644,15 +1642,6 @@ input:checked + .slider:before {
     z-index: 2;
 }
 
-.secondary-date {
-    font-size: calc(var(--base-font-size) * 0.7);
-    position: absolute;
-    top: 2px;
-    right: 2px;
-    color: var(--text-color);
-    opacity: 0.8;
-    z-index: 1;
-}
 
 .events-container {
     position: absolute;
