@@ -1357,8 +1357,8 @@ document.addEventListener('DOMContentLoaded', () => {
     initCalendar();
     // הוסף את השורות האלה בסוף:
     checkForUpdates();
-    // setInterval(checkForUpdates, 1000 * 60 * 60 * 6); // בדוק כל 6 שעות
-    setInterval(checkForUpdates, 1000 * 6); // בדוק כל 6 שעות
+    setInterval(checkForUpdates, 1000 * 60 * 60 * 6); // בדוק כל 6 שעות
+    // setInterval(checkForUpdates, 1000 * 6); // בדוק כל 6 שעות
 });
 
 

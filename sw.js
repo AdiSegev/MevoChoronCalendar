@@ -1,5 +1,5 @@
 // מספר גרסה - שנה אותו כשאתה רוצה לאלץ עדכון
-const VERSION = '1.0.25';
+const VERSION = '1.0.26';
 const CACHE_NAME = `hebcal-${VERSION}`;
 
 // רשימת הקבצים הבסיסיים שבטוח קיימים
