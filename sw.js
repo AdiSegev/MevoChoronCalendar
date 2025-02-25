@@ -1,4 +1,6 @@
-const CACHE_NAME = 'hebcal-v3';
+// מספר גרסה - שנה אותו כשאתה רוצה לאלץ עדכון
+const VERSION = '1.0.22';
+const CACHE_NAME = `hebcal-${VERSION}`;
 
 // רשימת הקבצים הבסיסיים שבטוח קיימים
 const CORE_ASSETS = [
@@ -37,51 +39,42 @@ async function fetchAndCacheIcon(request, iconUrl) {
 
 // התקנת Service Worker
 self.addEventListener('install', event => {
-    console.log('[Service Worker] Installing');
-    self.skipWaiting();
-    
+    console.log('[Service Worker] Installing new version:', VERSION);
     event.waitUntil(
-        caches.open(CACHE_NAME)
-            .then(cache => {
-                console.log('[Service Worker] Caching core assets');
-                return Promise.all(
-                    CORE_ASSETS.map(async asset => {
-                        try {
-                            const response = await fetch(asset);
-                            if (response.ok) {
-                                await cache.put(asset, response);
-                                console.log(`[Service Worker] Cached: ${asset}`);
-                            } else {
-                                console.warn(`[Service Worker] Failed to cache: ${asset}`);
-                            }
-                        } catch (error) {
-                            console.warn(`[Service Worker] Error caching ${asset}:`, error);
-                        }
-                    })
-                );
-            })
+        caches.open(CACHE_NAME).then(cache => {
+           
+            // מחק את המטמון הקודם לפני שמירת הקבצים החדשים
+            return cache.keys().then(requests => 
+                Promise.all(requests.map(request => cache.delete(request)))
+            ).then(() => {
+                // שמור את הקבצים החדשים
+                return cache.addAll(CORE_ASSETS.map(asset => {
+                    return new Request(asset, { cache: 'no-cache' });
+                }));
+            });
+        })
     );
 });
 
+
 // הפעלת Service Worker
 self.addEventListener('activate', event => {
-    console.log('[Service Worker] Activating');
     event.waitUntil(
-        Promise.all([
-            caches.keys().then(cacheNames => {
-                return Promise.all(
-                    cacheNames
-                        .filter(cacheName => cacheName !== CACHE_NAME)
-                        .map(cacheName => {
-                            console.log(`[Service Worker] Deleting old cache: ${cacheName}`);
-                            return caches.delete(cacheName);
-                        })
-                );
-            }),
-            clients.claim()
-        ])
+        caches.keys().then(cacheNames => {
+            return Promise.all(
+                cacheNames.map(cacheName => {
+                    if (cacheName !== CACHE_NAME) {
+            
+                        return caches.delete(cacheName);
+                    }
+                })
+            );
+        }).then(() => {
+            return clients.claim();
+        })
     );
 });
+
 
 // טיפול בבקשות
 self.addEventListener('fetch', event => {
@@ -94,7 +87,7 @@ self.addEventListener('fetch', event => {
             caches.match(mappedPath)
                 .then(response => {
                     if (response) {
-                        console.log(`[Service Worker] Returning mapped file: ${mappedPath}`);
+                       
                         return response;
                     }
                     console.warn(`[Service Worker] Mapped file not found: ${mappedPath}`);
@@ -132,4 +125,18 @@ self.addEventListener('fetch', event => {
                 });
             })
     );
+});
+
+// האזנה להודעות
+self.addEventListener('message', event => {
+    if (event.data.type === 'SKIP_WAITING') {
+        console.log('[Service Worker] Skip waiting and activate new version');
+        self.skipWaiting();
+    } else if (event.data.type === 'GET_VERSION') {
+        console.log('[Service Worker] Sending version:', VERSION);
+        event.ports[0].postMessage({
+            type: 'VERSION',
+            version: VERSION
+        });
+    }
 });

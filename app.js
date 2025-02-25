@@ -1010,7 +1010,7 @@ function createDayElement(date, container, isOutsideMonth) {
 
 // הצגת פרטי היום
 function showDayDetails(date) {
-    console.log('showDayDetails called with date:', date);
+    
     const modal = document.getElementById('dayModal');
     const modalDate = document.getElementById('modalDate');
     const modalEvents = document.getElementById('modalEvents');
@@ -1073,9 +1073,9 @@ function showDayDetails(date) {
     }
 
     // קבלת הזמנים ליום הנבחר
-    console.log('Trying to get times for date:', date);
+    
     const dayTimes = timesManager.getTimesForDate(date);
-    console.log('Day times:', dayTimes);
+    
     if (!dayTimes) {
         console.error('לא נמצאו זמנים לתאריך זה');
         modalZmanim.innerHTML = '<div>לא נמצאו זמנים לתאריך זה</div>';
@@ -1156,7 +1156,7 @@ function showDayDetails(date) {
 
 // מאזיני אירועים
 function setupEventListeners() {
-    console.log('Setting up event listeners');
+    
 
     // כפתורי ניווט
     const prevMonthBtn = document.getElementById('prevMonth');
@@ -1329,8 +1329,22 @@ function setupEventListeners() {
     });
 
 }
+// פונקציה להצגת הודעת עדכון
+function showUpdateSuccessMessage() {
+    const updateInfo = localStorage.getItem('updateInfo');
+    if (updateInfo) {
+        const { version, timestamp } = JSON.parse(updateInfo);
+        // בדוק אם העדכון התבצע בדקה האחרונה
+        if (Date.now() - timestamp < 60000) {
+            showToast(`העדכון הותקן בהצלחה! (גרסה ${version})`, 3000);
+        }
+        localStorage.removeItem('updateInfo');
+    }
+}
 
 document.addEventListener('DOMContentLoaded', () => {
+    // בדוק אם זה רענון אחרי עדכון
+    showUpdateSuccessMessage();
     setupDisplaySettings();
     applySettings(); // החלת ההגדרות השמורות
     setupEventsModalEventListeners();
@@ -1341,6 +1355,9 @@ document.addEventListener('DOMContentLoaded', () => {
     setupAboutModalEventListeners();
     setupSidebarEventListeners();
     initCalendar();
+    // הוסף את השורות האלה בסוף:
+    checkForUpdates();
+    setInterval(checkForUpdates, 6 * 1000); // בדוק כל 6 שעות
 });
 
 
@@ -1469,8 +1486,12 @@ function showDisplayModal() {
 
 function hideDisplayModal() {
     const displayModal = document.getElementById('displayModal');
+    const overlay = document.getElementById('overlay');
     if (displayModal) {
         displayModal.classList.remove('active');
+    }
+    if (overlay) {
+        overlay.classList.remove('active');
     }
 }
 
@@ -1701,7 +1722,7 @@ async function loadTimesData() {
         const data = new Uint8Array(await response.arrayBuffer());
         const workbook = XLSX.read(data, { type: 'array' });
 
-        // console.log('=== בדיקת נתונים - השוואה בין שתי השיטות ===');
+        
 
         // נעבור על כל הגליונות (1-12)
         for (let month = 1; month <= 12; month++) {
@@ -1760,7 +1781,7 @@ async function downloadExistingExcel() {
         document.body.removeChild(link);
         URL.revokeObjectURL(link.href);
 
-        } catch (error) {
+    } catch (error) {
         console.error('שגיאה בהורדת קובץ Excel:', error);
         alert('שגיאה בהורדת הקובץ', 3000);
     }
@@ -2115,7 +2136,7 @@ function setupSidebarEventListeners() {
 
 
 function setupDisplayModalEventListeners() {
-    console.log('setupDisplayModalEventListeners called');
+    
     const displayModal = document.getElementById('displayModal');
     const displayForm = document.getElementById('displaySettingsForm');
     const displayCloseBtn = displayModal.querySelector('.close');
@@ -2138,7 +2159,7 @@ function setupDisplayModalEventListeners() {
 }
 
 function setupTimesModalEventListeners() {
-    console.log('setupTimesModalEventListeners called');
+    
     const timesModal = document.getElementById('timesModal');
     const timesForm = document.getElementById('timesSettingsForm');
     const timesCloseBtn = timesModal.querySelector('.close');
@@ -2228,47 +2249,11 @@ function loadTimesSettings() {
 
 function applyTimesSettings(settings = loadTimesSettings()) {
     // כאן תוסיף לוגיקה להחלת ההגדרות על הלוח שנה
-    console.log('Applying times settings:', settings);
+    
     // דוגמה: עדכון תצוגת זמנים
     // document.documentElement.style.setProperty('--dawn-type', settings.dawnType);
 }
 
-// פונקציה להדפסת כל האירועים בחודש
-function printMonthEvents(year, month) {
-    console.log(`אירועים בחודש ${getHebrewMonthName(month, year)} ${convertNumberToHebrewYear(year)}:`);
-
-    // קבלת מספר הימים בחודש
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-    for (let day = 1; day <= daysInMonth; day++) {
-        const currentDate = new Date(year, month, day);
-        const hebDate = new HDate(currentDate);
-        const events = HebrewCalendar.getHolidaysOnDate(hebDate, eventOptions);
-
-        if (events && events.length > 0) {
-            // הדפסת תאריך עברי ולועזי
-            console.log(`תאריך: ${hebDate.getDate()} ${getHebrewMonthName(hebDate.getMonth() - 1, hebDate.getFullYear())} ${convertNumberToHebrewYear(hebDate.getFullYear())} (${currentDate.getDate()}/${currentDate.getMonth() + 1}/${currentDate.getFullYear()})`);
-
-            events.forEach(event => {
-                console.log(`- ${event.desc}`);
-            });
-        }
-    }
-}
-
-function printEventsWithCategories(events) {
-    console.log('אירועים מקוטלגים:');
-
-    events.forEach(event => {
-        const mappedCategory = mapEventCategory(event);
-
-        if (mappedCategory) {
-            console.log(`תאריך: ${event.getDate().getDate()} ${getHebrewMonthName(event.getDate().getMonth(), event.getDate().getFullYear())} ${convertNumberToHebrewYear(event.getDate().getFullYear())}`);
-            console.log(`- אירוע: ${event.getDesc()}`);
-            console.log(`- קטגוריה: ${mappedCategory}\n`);
-        }
-    });
-}
 
 function mapEventCategory(event) {
     const settings = loadSettings();
@@ -2483,4 +2468,187 @@ function getEventCategory(event) {
 function getEventEmoji(event) {
     const category = getEventCategory(event);
     return eventEmojis[category];
+}
+
+// בדיקת עדכונים זמינים
+function checkForUpdates() {
+    
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.ready.then(registration => {
+            
+            registration.update().then(() => {
+            
+                const newWorker = registration.installing || registration.waiting;
+
+                if (newWorker) {
+            
+                    newWorker.addEventListener('statechange', () => {
+            
+                        if (newWorker.state === 'installed') {
+                            // הסר toast ישן אם קיים
+                            const oldToast = document.querySelector('.toast');
+                            if (oldToast) {
+                                oldToast.remove();
+                            }
+
+                            const toast = document.createElement('div');
+                            toast.className = 'toast';
+                            toast.innerHTML = `
+                                יש עדכון זמין!
+                                <button onclick="window.handleServiceWorkerUpdate()" style="margin-right: 10px; padding: 5px 10px; border: none; background: white; color: #333; border-radius: 4px; cursor: pointer;">
+                                    עדכן עכשיו
+                                </button>
+                            `;
+                            document.body.appendChild(toast);
+                            setTimeout(() => toast.classList.add('show'), 100);
+                        }
+                    });
+                }
+            }).catch(err => {
+                console.error('Error updating Service Worker:', err);
+            });
+        }).catch(err => {
+            console.error('Error with Service Worker ready:', err);
+        });
+    } else {
+        console.log('Service Worker is not supported');
+    }
+}
+
+// פונקציה לעדכון מיידי - הוספנו לחלון הגלובלי
+window.handleServiceWorkerUpdate = async function () {
+    
+    // סגירת ה-toast
+    const toast = document.querySelector('.toast');
+    if (toast) {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 500);
+    }
+
+    navigator.serviceWorker.ready.then(async registration => {
+       
+        // נסה לאלץ עדכון
+       
+        registration.update().then( async() => {
+       
+            
+            // נסה שוב לקבל את ה-worker החדש
+            const newWorker = registration.installing || registration.waiting;
+            if (newWorker) {
+                handleNewWorker(newWorker);
+            } else {
+                // אם אין worker חדש, נסה לרענן את הדף בכל זאת
+                console.log('No new worker found, trying page reload');
+                const version = await getCurrentVersion();
+                localStorage.setItem('updateInfo', JSON.stringify({
+                    version,
+                    timestamp: Date.now()
+                }));
+                
+                setTimeout(() => {
+                    ;
+                    window.location.reload(true);
+                }, 1000);
+            }
+        });
+    }).catch(err => {
+        console.error('Error during update:', err);
+    });
+}
+
+// פונקציה לטיפול ב-Service Worker חדש
+async function handleNewWorker(worker) {
+    
+    // שמור את הגרסה החדשה לפני הרענון
+    const version = await getCurrentVersion();
+    localStorage.setItem('updateInfo', JSON.stringify({
+        version,
+        timestamp: Date.now()
+    }));
+
+    
+    worker.postMessage({ type: 'SKIP_WAITING' });
+}
+// פונקציה לטיפול ב-Service Worker חדש
+async function handleNewWorker(worker) {
+  
+    // שמור את הגרסה החדשה לפני הרענון
+    const version = await getCurrentVersion();
+    localStorage.setItem('updateInfo', JSON.stringify({
+        version,
+        timestamp: Date.now()
+    }));
+
+    
+    worker.postMessage({ type: 'SKIP_WAITING' });
+    
+    
+    setTimeout(() => {
+        try {
+            window.location.href = window.location.href;
+        } catch (err) {
+            console.error('Error during reload:', err);
+            window.location.reload(true);
+        }
+    }, 1500);
+}
+// בדיקת עדכונים זמינים
+function checkForUpdates() {
+    
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.ready.then(registration => {
+            
+            registration.update().then(() => {
+                
+                const newWorker = registration.installing || registration.waiting;
+
+                if (newWorker) {
+                    
+                    newWorker.addEventListener('statechange', () => {
+                        
+                        if (newWorker.state === 'installed') {
+                            // הסר toast ישן אם קיים
+                            const oldToast = document.querySelector('.toast');
+                            if (oldToast) {
+                                oldToast.remove();
+                            }
+
+                            const toast = document.createElement('div');
+                            toast.className = 'toast';
+                            toast.innerHTML = `
+                                יש עדכון זמין!
+                                <button onclick="window.handleServiceWorkerUpdate()" style="margin-right: 10px; padding: 5px 10px; border: none; background: white; color: #333; border-radius: 4px; cursor: pointer;">
+                                    עדכן עכשיו
+                                </button>
+                            `;
+                            document.body.appendChild(toast);
+                            setTimeout(() => toast.classList.add('show'), 100);
+                        }
+                    });
+                }
+            });
+        });
+    }
+}
+
+// פונקציה לקבלת הגרסה הנוכחית מה-Service Worker
+async function getCurrentVersion() {
+    try {
+        const registration = await navigator.serviceWorker.ready;
+        const worker = registration.active || registration.installing || registration.waiting;
+        if (worker) {
+            return new Promise((resolve) => {
+                const channel = new MessageChannel();
+                channel.port1.onmessage = (event) => {
+                    if (event.data.type === 'VERSION') {
+                        resolve(event.data.version);
+                    }
+                };
+                worker.postMessage({ type: 'GET_VERSION' }, [channel.port2]);
+            });
+        }
+    } catch (err) {
+        console.error('Error getting version:', err);
+    }
+    return 'unknown';
 }
