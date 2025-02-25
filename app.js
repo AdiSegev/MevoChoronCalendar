@@ -1357,7 +1357,8 @@ document.addEventListener('DOMContentLoaded', () => {
     initCalendar();
     // הוסף את השורות האלה בסוף:
     checkForUpdates();
-    setInterval(checkForUpdates, 6 * 1000); // בדוק כל 6 שעות
+    // setInterval(checkForUpdates, 1000 * 60 * 60 * 6); // בדוק כל 6 שעות
+    setInterval(checkForUpdates, 1000 * 6); // בדוק כל 6 שעות
 });
 
 
@@ -2575,27 +2576,6 @@ window.handleServiceWorkerUpdate = async function () {
 // פונקציה לטיפול ב-Service Worker חדש
 async function handleNewWorker(worker) {
 
-    // שמור את הגרסה החדשה לפני הרענון
-    const version = await getCurrentVersion();
-    localStorage.setItem('updateInfo', JSON.stringify({
-        version,
-        timestamp: Date.now()
-    }));
-
-
-    worker.postMessage({ type: 'SKIP_WAITING' });
-}
-// פונקציה לטיפול ב-Service Worker חדש
-async function handleNewWorker(worker) {
-
-    // שמור את הגרסה החדשה לפני הרענון
-    const version = await getCurrentVersion();
-    localStorage.setItem('updateInfo', JSON.stringify({
-        version,
-        timestamp: Date.now()
-    }));
-
-
     worker.postMessage({ type: 'SKIP_WAITING' });
 
 
@@ -2620,7 +2600,7 @@ function checkForUpdates() {
 
                 if (newWorker) {
 
-                    newWorker.addEventListener('statechange', () => {
+                    newWorker.addEventListener('statechange',async () => {
 
                         if (newWorker.state === 'installed') {
                             // הסר toast ישן אם קיים
@@ -2639,6 +2619,13 @@ function checkForUpdates() {
                             `;
                             document.body.appendChild(toast);
                             setTimeout(() => toast.classList.add('show'), 100);
+                        }else if (newWorker.state === 'activated') {
+                            const version = await getCurrentVersion();
+                            localStorage.setItem('updateInfo', JSON.stringify({
+                                version,
+                                timestamp: Date.now()
+                            }));
+                            window.location.reload(true);
                         }
                     });
                 }
