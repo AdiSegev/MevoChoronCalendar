@@ -1010,7 +1010,7 @@ function createDayElement(date, container, isOutsideMonth) {
 
 // הצגת פרטי היום
 function showDayDetails(date) {
-    
+
     const modal = document.getElementById('dayModal');
     const modalDate = document.getElementById('modalDate');
     const modalEvents = document.getElementById('modalEvents');
@@ -1073,9 +1073,9 @@ function showDayDetails(date) {
     }
 
     // קבלת הזמנים ליום הנבחר
-    
+
     const dayTimes = timesManager.getTimesForDate(date);
-    
+
     if (!dayTimes) {
         console.error('לא נמצאו זמנים לתאריך זה');
         modalZmanim.innerHTML = '<div>לא נמצאו זמנים לתאריך זה</div>';
@@ -1156,7 +1156,7 @@ function showDayDetails(date) {
 
 // מאזיני אירועים
 function setupEventListeners() {
-    
+
 
     // כפתורי ניווט
     const prevMonthBtn = document.getElementById('prevMonth');
@@ -1407,8 +1407,24 @@ function setupHalachaModalEventListeners() {
 function setupAboutModalEventListeners() {
     const aboutModal = document.getElementById('aboutModal');
     const closeBtn = aboutModal.querySelector('.close');
+    const aboutBtn = document.querySelector('[data-modal="aboutModal"]');
+    const overlay = document.getElementById('overlay');
 
-    if (aboutModal && closeBtn) {
+    if (aboutModal && closeBtn && aboutBtn) {
+        // פתיחת המודאל
+        aboutBtn.addEventListener('click', async () => {
+            const version = await getCurrentVersion();
+            const versionElement = aboutModal.querySelector('#appVersion');
+            if (versionElement) {
+                versionElement.textContent = version;
+            }
+            aboutModal.classList.add('active');
+            if (overlay) {
+                overlay.classList.add('active');
+            }
+        });
+
+        // סגירת המודאל
         closeBtn.addEventListener('click', hideAboutModal);
 
         // סגירת המודאל בלחיצה על הרקע
@@ -1722,7 +1738,7 @@ async function loadTimesData() {
         const data = new Uint8Array(await response.arrayBuffer());
         const workbook = XLSX.read(data, { type: 'array' });
 
-        
+
 
         // נעבור על כל הגליונות (1-12)
         for (let month = 1; month <= 12; month++) {
@@ -2136,7 +2152,7 @@ function setupSidebarEventListeners() {
 
 
 function setupDisplayModalEventListeners() {
-    
+
     const displayModal = document.getElementById('displayModal');
     const displayForm = document.getElementById('displaySettingsForm');
     const displayCloseBtn = displayModal.querySelector('.close');
@@ -2159,7 +2175,7 @@ function setupDisplayModalEventListeners() {
 }
 
 function setupTimesModalEventListeners() {
-    
+
     const timesModal = document.getElementById('timesModal');
     const timesForm = document.getElementById('timesSettingsForm');
     const timesCloseBtn = timesModal.querySelector('.close');
@@ -2249,7 +2265,7 @@ function loadTimesSettings() {
 
 function applyTimesSettings(settings = loadTimesSettings()) {
     // כאן תוסיף לוגיקה להחלת ההגדרות על הלוח שנה
-    
+
     // דוגמה: עדכון תצוגת זמנים
     // document.documentElement.style.setProperty('--dawn-type', settings.dawnType);
 }
@@ -2472,18 +2488,18 @@ function getEventEmoji(event) {
 
 // בדיקת עדכונים זמינים
 function checkForUpdates() {
-    
+
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.ready.then(registration => {
-            
+
             registration.update().then(() => {
-            
+
                 const newWorker = registration.installing || registration.waiting;
 
                 if (newWorker) {
-            
+
                     newWorker.addEventListener('statechange', () => {
-            
+
                         if (newWorker.state === 'installed') {
                             // הסר toast ישן אם קיים
                             const oldToast = document.querySelector('.toast');
@@ -2517,7 +2533,7 @@ function checkForUpdates() {
 
 // פונקציה לעדכון מיידי - הוספנו לחלון הגלובלי
 window.handleServiceWorkerUpdate = async function () {
-    
+
     // סגירת ה-toast
     const toast = document.querySelector('.toast');
     if (toast) {
@@ -2526,12 +2542,12 @@ window.handleServiceWorkerUpdate = async function () {
     }
 
     navigator.serviceWorker.ready.then(async registration => {
-       
+
         // נסה לאלץ עדכון
-       
-        registration.update().then( async() => {
-       
-            
+
+        registration.update().then(async () => {
+
+
             // נסה שוב לקבל את ה-worker החדש
             const newWorker = registration.installing || registration.waiting;
             if (newWorker) {
@@ -2544,7 +2560,7 @@ window.handleServiceWorkerUpdate = async function () {
                     version,
                     timestamp: Date.now()
                 }));
-                
+
                 setTimeout(() => {
                     ;
                     window.location.reload(true);
@@ -2558,7 +2574,7 @@ window.handleServiceWorkerUpdate = async function () {
 
 // פונקציה לטיפול ב-Service Worker חדש
 async function handleNewWorker(worker) {
-    
+
     // שמור את הגרסה החדשה לפני הרענון
     const version = await getCurrentVersion();
     localStorage.setItem('updateInfo', JSON.stringify({
@@ -2566,12 +2582,12 @@ async function handleNewWorker(worker) {
         timestamp: Date.now()
     }));
 
-    
+
     worker.postMessage({ type: 'SKIP_WAITING' });
 }
 // פונקציה לטיפול ב-Service Worker חדש
 async function handleNewWorker(worker) {
-  
+
     // שמור את הגרסה החדשה לפני הרענון
     const version = await getCurrentVersion();
     localStorage.setItem('updateInfo', JSON.stringify({
@@ -2579,10 +2595,10 @@ async function handleNewWorker(worker) {
         timestamp: Date.now()
     }));
 
-    
+
     worker.postMessage({ type: 'SKIP_WAITING' });
-    
-    
+
+
     setTimeout(() => {
         try {
             window.location.href = window.location.href;
@@ -2594,18 +2610,18 @@ async function handleNewWorker(worker) {
 }
 // בדיקת עדכונים זמינים
 function checkForUpdates() {
-    
+
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.ready.then(registration => {
-            
+
             registration.update().then(() => {
-                
+
                 const newWorker = registration.installing || registration.waiting;
 
                 if (newWorker) {
-                    
+
                     newWorker.addEventListener('statechange', () => {
-                        
+
                         if (newWorker.state === 'installed') {
                             // הסר toast ישן אם קיים
                             const oldToast = document.querySelector('.toast');
