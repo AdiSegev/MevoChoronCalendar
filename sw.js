@@ -1,5 +1,5 @@
 // מספר גרסה - שנה אותו כשאתה רוצה לאלץ עדכון
-const VERSION = '1.0.26';
+const VERSION = '1.0.29';
 const CACHE_NAME = `hebcal-${VERSION}`;
 
 // רשימת הקבצים הבסיסיים שבטוח קיימים
@@ -12,9 +12,15 @@ const CORE_ASSETS = [
     './lib/hebcal-core.js',
     './lib/hebcal-core.min.js',
     './lib/xlsx.full.min.js',
-    './icons/icon-192.png',
-    './icons/icon-512.png',
-    './favicon.ico'
+    "./screenshots/mobile.png",
+    "./screenshots/desktop.png",
+    './icons/web-app-manifest-144x144.png',
+    './icons/web-app-manifest-192x192.png',
+    './icons/web-app-manifest-512x512.png',
+    './icons/favicon.ico',
+    './icons/favicon-96x96.png',
+    './icons/favicon.svg',
+    './icons/apple-touch-icon.png',
 ];
 
 // מיפוי URL חיצוניים לקבצים מקומיים
@@ -42,9 +48,9 @@ self.addEventListener('install', event => {
     console.log('[Service Worker] Installing new version:', VERSION);
     event.waitUntil(
         caches.open(CACHE_NAME).then(cache => {
-           
+
             // מחק את המטמון הקודם לפני שמירת הקבצים החדשים
-            return cache.keys().then(requests => 
+            return cache.keys().then(requests =>
                 Promise.all(requests.map(request => cache.delete(request)))
             ).then(() => {
                 // שמור את הקבצים החדשים
@@ -64,7 +70,7 @@ self.addEventListener('activate', event => {
             return Promise.all(
                 cacheNames.map(cacheName => {
                     if (cacheName !== CACHE_NAME) {
-            
+
                         return caches.delete(cacheName);
                     }
                 })
@@ -79,7 +85,7 @@ self.addEventListener('activate', event => {
 // טיפול בבקשות
 self.addEventListener('fetch', event => {
     const url = new URL(event.request.url);
-    
+
     // בדיקה אם יש מיפוי URL לקובץ מקומי
     const mappedPath = URL_MAPPING[url.pathname] || URL_MAPPING[event.request.url];
     if (mappedPath) {
@@ -87,7 +93,7 @@ self.addEventListener('fetch', event => {
             caches.match(mappedPath)
                 .then(response => {
                     if (response) {
-                       
+
                         return response;
                     }
                     console.warn(`[Service Worker] Mapped file not found: ${mappedPath}`);
@@ -116,7 +122,7 @@ self.addEventListener('fetch', event => {
                     console.error(`[Service Worker] Fetch failed for ${event.request.url}:`, error);
                 }
 
-                return new Response('Resource not found', { 
+                return new Response('Resource not found', {
                     status: 404,
                     headers: {
                         'Content-Type': 'text/plain',
