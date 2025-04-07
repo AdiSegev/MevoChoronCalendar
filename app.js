@@ -1124,7 +1124,7 @@ function showDayDetails(date) {
 
         timesContent += `<div>מוצאי שבת: ${filteredTimes.shabbatEnd}</div>`;
 
-        timesContent += `<div>מוצאי שבת ר"ת: ${dayTimes.rtzeit72}</div>`;
+        timesContent += `<div>מוצאי שבת ר"ת: ${filteredTimes.rtzeit72}</div>`;
 
     }
 
@@ -1622,16 +1622,37 @@ function filterTimesBySettings(dayTimes, date) {
     const shouldUseDST = settings.autoTimeZone && isDaylightSavingTime(date);
 
     // פונקציה להוספת שעה אם נדרש
-    const adjustTime = (timeStr) => {
+    const adjustTime = (timeStr, isAfternoon = false) => {
         if (!timeStr) return timeStr;
 
         // בדיקה האם להשתמש בשעון קיץ עבור השעה הספציפית
         const shouldUseDST = settings.autoTimeZone && isDaylightSavingTime(date, timeStr);
-        if (!shouldUseDST) return timeStr;
 
-        const [hours, minutes] = timeStr.split(':').map(Number);
-        const adjustedHours = (hours + 1) % 24;
-        return `${adjustedHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+        // פיצול לשעות ודקות (כמחרוזות)
+        let [hoursStr, minutesStr] = timeStr.split(':');
+        let hours = Number(hoursStr);
+
+        // טיפול בעיצוב הדקות תוך שמירה על החלק העשרוני
+        let finalMinutesStr;
+        if (minutesStr.includes('.')) {
+            let [wholeMinutes, fractionalMinutes] = minutesStr.split('.');
+            finalMinutesStr = `${wholeMinutes.padStart(2, '0')}.${fractionalMinutes}`;
+        } else {
+            finalMinutesStr = minutesStr.padStart(2, '0');
+        }
+
+        // המרה לפורמט 24 שעות עבור זמני אחה"צ/ערב
+        if (isAfternoon && hours < 12) {
+            hours += 12;
+        }
+
+        // התאמת שעון קיץ אם צריך
+        if (shouldUseDST) {
+            hours = (hours + 1) % 24;
+        }
+
+        // החזרת הזמן המעוצב
+        return `${hours.toString().padStart(2, '0')}:${finalMinutesStr}`;
     };
 
     // עלות השחר - בדיקת הגדרה מדויקת
@@ -1648,37 +1669,43 @@ function filterTimesBySettings(dayTimes, date) {
     // צאת הכוכבים - בדיקת הגדרה מדויקת
     switch (settings.tzeitType) {
         case '22.5':
-            filteredTimes.tzeit = adjustTime(dayTimes.tzeit2);
+            filteredTimes.tzeit = adjustTime(dayTimes.tzeit2,true);
             break;
         case '24':
-            filteredTimes.tzeit = adjustTime(dayTimes.tzeit1);
+            filteredTimes.tzeit = adjustTime(dayTimes.tzeit1,true);
             break;
         default: // '14' או כל ערך אחר
-            filteredTimes.tzeit = adjustTime(dayTimes.tzeit3);
+            filteredTimes.tzeit = adjustTime(dayTimes.tzeit3,true);
     }
 
     // מוצאי שבת - בדיקת הגדרה מדויקת
     if (date.getDay() === 6) { // שבת
         filteredTimes.shabbatEnd = adjustTime(settings.shabbatEndType === 'hazon'
             ? dayTimes.hazon40
-            : dayTimes.shabbatEnd);
+            : dayTimes.shabbatEnd,true);
     }
 
     // זמנים קבועים
     filteredTimes.sunrise = adjustTime(dayTimes.sunrise);
-    filteredTimes.sunset = adjustTime(dayTimes.sunset);
+    filteredTimes.sunset = adjustTime(dayTimes.sunset,true);
     filteredTimes.chatzot = adjustTime(dayTimes.chatzot);
     filteredTimes.minchaGedola = adjustTime(dayTimes.minchaGedola);
-    filteredTimes.minchaKetana = adjustTime(dayTimes.minchaKetana);
-    filteredTimes.plag = adjustTime(dayTimes.plag);
+    filteredTimes.minchaKetana = adjustTime(dayTimes.minchaKetana,true);
+    filteredTimes.plag = adjustTime(dayTimes.plag,true);
     filteredTimes.talitTefilin = adjustTime(dayTimes.talitTefilin);
 
     // זמני ערב שבת
     if (date.getDay() === 5) { // יום שישי
-        filteredTimes.candlelighting = adjustTime(dayTimes.candlelighting);
+        filteredTimes.candlelighting = adjustTime(dayTimes.candlelighting,true);
     }
-
+    filteredTimes.rtzeit72 = adjustTime(dayTimes.rtzeit72,true);
     return filteredTimes;
+}
+
+
+function isAfternoonTime(timeName) {
+    const afternoonTimes = ['minchaKetana', 'minchaGedola', 'plag', 'sunset', 'candlelighting', 'tzeit1', 'tzeit2', 'tzeit3', 'shabbatEnd', 'hazon40', 'rtzeit72'];
+    return afternoonTimes.includes(timeName);
 }
 
 function isDaylightSavingTime(date, timeStr) {
